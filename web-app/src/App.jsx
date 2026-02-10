@@ -471,6 +471,21 @@ const App = () => {
         finally { setIsLoading(false); }
     };
 
+    const handleRenameTab = async (oldName) => {
+        const newNameInput = prompt(`[${oldName}] 시험지의 새 이름을 입력하세요:`, oldName);
+        if (!newNameInput || newNameInput === oldName) return;
+
+        setIsLoading(true);
+        try {
+            const res = await sheetsService.renameSheet(spreadsheetId, oldName, newNameInput.trim());
+            if (res.status === 'SUCCESS') {
+                if (activeTab === oldName) setActiveTab(newNameInput.trim());
+                await loadSheetNames();
+            } else { alert('이름 변경 실패: ' + res.message); }
+        } catch (e) { alert('오류: ' + e.message); }
+        finally { setIsLoading(false); }
+    };
+
     const filteredList = useMemo(() => {
         return studentList.filter(s => {
             const searchStr = listSearch.toLowerCase();
@@ -663,13 +678,18 @@ const App = () => {
                                         <button onClick={() => setActiveTab(n)} className={cn("flex-1 text-left px-5 py-4 rounded-2xl text-[14px] font-black transition-all flex items-center justify-between", activeTab === n ? "bg-blue-600 text-white shadow-lg shadow-blue-200" : "hover:bg-slate-50 text-slate-600 hover:text-slate-900")}>
                                             <div className="flex items-center gap-3">
                                                 <div className={cn("w-2.5 h-2.5 rounded-full", activeTab === n ? "bg-white" : "bg-slate-200")} />
-                                                <span>{n}</span>
+                                                <span className="truncate">{n}</span>
                                             </div>
                                             {activeTab === n && <CheckCircle2 className="w-4 h-4 text-white" />}
                                         </button>
-                                        <button onClick={() => handleDeleteTab(n)} className="p-3 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100" title="탭 삭제">
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
+                                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                                            <button onClick={() => handleRenameTab(n)} className="p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="이름 변경">
+                                                <Pencil className="w-4 h-4" />
+                                            </button>
+                                            <button onClick={() => handleDeleteTab(n)} className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all" title="탭 삭제">
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
                                     </div>
                                 ))}
                                 {allTabNames.length === 0 && <p className="text-center text-slate-300 py-20 italic">시험지 데이터가 없습니다.</p>}

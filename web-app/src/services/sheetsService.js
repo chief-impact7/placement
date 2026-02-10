@@ -484,6 +484,35 @@ class SheetsService {
         }
     }
 
+    // 시트(탭) 이름 변경 기능
+    async renameSheet(spreadsheetId, oldSheetName, newSheetName) {
+        try {
+            const sheetId = await this.getSheetId(spreadsheetId, oldSheetName);
+            if (sheetId === null) {
+                return { status: "ERROR", message: "변경할 시트를 찾을 수 없습니다." };
+            }
+
+            await window.gapi.client.sheets.spreadsheets.batchUpdate({
+                spreadsheetId: spreadsheetId,
+                resource: {
+                    requests: [{
+                        updateSheetProperties: {
+                            properties: {
+                                sheetId: sheetId,
+                                title: newSheetName
+                            },
+                            fields: "title"
+                        }
+                    }]
+                }
+            });
+            return { status: "SUCCESS" };
+        } catch (err) {
+            console.error('Rename sheet error:', err);
+            return { status: "ERROR", message: err.message };
+        }
+    }
+
     getColLetter(colIdx) {
         let code = "";
         while (colIdx >= 0) {
