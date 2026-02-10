@@ -213,7 +213,7 @@ class SheetsService {
                     dept_type: dept_type,
                     scores: scores
                 };
-            });
+            }).filter(student => student.name && student.name.trim() !== '');
         } catch (err) {
             console.error('Get rows error:', err);
             throw err;
@@ -444,28 +444,42 @@ class SheetsService {
         }
     }
 
-    // 데이터 삭제 (행 삭제)
+    // 데이터 삭제 (범위 값 지우기 - 행 물리 삭제 방지 및 수식 영역 보호)
     async deleteRow(spreadsheetId, sheetName, rowNumber) {
         try {
+            // A열부터 ZZ열까지 해당 행의 값만 지움 (행 자체는 남겨둠)
+            await window.gapi.client.sheets.spreadsheets.values.clear({
+                spreadsheetId: spreadsheetId,
+                range: `'${sheetName}'!A${rowNumber}:ZZ${rowNumber}`,
+            });
+            return { status: "SUCCESS" };
+        } catch (err) {
+            console.error('Delete row error:', err);
+            return { status: "ERROR", message: err.message };
+        }
+    }
+
+    // 시트(탭) 삭제 기능
+    async deleteSheet(spreadsheetId, sheetName) {
+        try {
             const sheetId = await this.getSheetId(spreadsheetId, sheetName);
+            if (sheetId === null) {
+                return { status: "ERROR", message: "삭제할 시트를 찾을 수 없습니다." };
+            }
+
             await window.gapi.client.sheets.spreadsheets.batchUpdate({
                 spreadsheetId: spreadsheetId,
                 resource: {
                     requests: [{
-                        deleteDimension: {
-                            range: {
-                                sheetId: sheetId,
-                                dimension: "ROWS",
-                                startIndex: rowNumber - 1,
-                                endIndex: rowNumber
-                            }
+                        deleteSheet: {
+                            sheetId: sheetId
                         }
                     }]
                 }
             });
             return { status: "SUCCESS" };
         } catch (err) {
-            console.error('Delete row error:', err);
+            console.error('Delete sheet error:', err);
             return { status: "ERROR", message: err.message };
         }
     }

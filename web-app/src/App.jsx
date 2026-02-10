@@ -447,13 +447,26 @@ const App = () => {
     };
 
     const deleteStudent = async (rowNumber) => {
-        if (!confirm('정말 삭제하시겠습니까?')) return;
+        if (!confirm('해당 학생 정보를 삭제하시겠습니까?\n(데이터만 지워지며 시트 구조는 유지됩니다.)')) return;
         setIsLoading(true);
         try {
             const res = await sheetsService.deleteRow(spreadsheetId, activeTab, rowNumber);
             if (res.status === 'SUCCESS') {
                 await loadStudentData(activeTab);
             } else { alert('삭제 실패: ' + res.message); }
+        } catch (e) { alert('오류: ' + e.message); }
+        finally { setIsLoading(false); }
+    };
+
+    const handleDeleteTab = async (sheetName) => {
+        if (!confirm(`[${sheetName}] 시험지 탭을 정말 삭제하시겠습니까?\n이 작업은 되돌릴 수 없으며 모든 데이터가 사라집니다.`)) return;
+        setIsLoading(true);
+        try {
+            const res = await sheetsService.deleteSheet(spreadsheetId, sheetName);
+            if (res.status === 'SUCCESS') {
+                if (activeTab === sheetName) setActiveTab('');
+                await loadSheetNames();
+            } else { alert('탭 삭제 실패: ' + res.message); }
         } catch (e) { alert('오류: ' + e.message); }
         finally { setIsLoading(false); }
     };
@@ -646,13 +659,18 @@ const App = () => {
                             </div>
                             <div className="flex-1 overflow-y-auto px-8 pb-8 space-y-2 custom-scrollbar">
                                 {allTabNames.filter(n => n.includes(tabSearch)).map(n => (
-                                    <button key={n} onClick={() => setActiveTab(n)} className={cn("w-full text-left px-5 py-4 rounded-2xl text-[14px] font-black transition-all flex items-center justify-between group", activeTab === n ? "bg-blue-600 text-white shadow-lg shadow-blue-200" : "hover:bg-slate-50 text-slate-600 hover:text-slate-900")}>
-                                        <div className="flex items-center gap-3">
-                                            <div className={cn("w-2.5 h-2.5 rounded-full", activeTab === n ? "bg-white" : "bg-slate-200")} />
-                                            <span>{n}</span>
-                                        </div>
-                                        {activeTab === n && <CheckCircle2 className="w-4 h-4 text-white" />}
-                                    </button>
+                                    <div key={n} className="flex items-center gap-2 group">
+                                        <button onClick={() => setActiveTab(n)} className={cn("flex-1 text-left px-5 py-4 rounded-2xl text-[14px] font-black transition-all flex items-center justify-between", activeTab === n ? "bg-blue-600 text-white shadow-lg shadow-blue-200" : "hover:bg-slate-50 text-slate-600 hover:text-slate-900")}>
+                                            <div className="flex items-center gap-3">
+                                                <div className={cn("w-2.5 h-2.5 rounded-full", activeTab === n ? "bg-white" : "bg-slate-200")} />
+                                                <span>{n}</span>
+                                            </div>
+                                            {activeTab === n && <CheckCircle2 className="w-4 h-4 text-white" />}
+                                        </button>
+                                        <button onClick={() => handleDeleteTab(n)} className="p-3 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100" title="탭 삭제">
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
                                 ))}
                                 {allTabNames.length === 0 && <p className="text-center text-slate-300 py-20 italic">시험지 데이터가 없습니다.</p>}
                             </div>
