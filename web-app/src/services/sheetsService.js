@@ -447,10 +447,10 @@ class SheetsService {
     // 데이터 삭제 (범위 값 지우기 - 행 물리 삭제 방지 및 수식 영역 보호)
     async deleteRow(spreadsheetId, sheetName, rowNumber) {
         try {
-            // A열부터 ZZ열까지 해당 행의 값만 지움 (행 자체는 남겨둠)
+            // A열부터 L열까지만 지움 (M열 이후의 수식/데이터 보호)
             await window.gapi.client.sheets.spreadsheets.values.clear({
                 spreadsheetId: spreadsheetId,
-                range: `'${sheetName}'!A${rowNumber}:ZZ${rowNumber}`,
+                range: `'${sheetName}'!A${rowNumber}:L${rowNumber}`,
             });
             return { status: "SUCCESS" };
         } catch (err) {
