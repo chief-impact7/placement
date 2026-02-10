@@ -164,7 +164,7 @@ const App = () => {
             if (!sheet) return '';
             // 참조 시트의 'SUM' 열을 가져옴 (해당 학기 점수)
             let value = await sheetsService.getStudentValue(spreadsheetId, sheet, cleanName, 'SUM');
-            return value || '';
+            return (value === undefined || value === null) ? '' : value;
         }));
 
         // 2. 현재 시트의 SUM 로딩
@@ -173,7 +173,7 @@ const App = () => {
             currentSum = await sheetsService.getStudentValue(spreadsheetId, activeTab, cleanName, 'SUM');
         }
 
-        setRefScores([...scores, currentSum || '']);
+        setRefScores([...scores, (currentSum === undefined || currentSum === null) ? '' : currentSum]);
     };
 
 
@@ -287,10 +287,12 @@ const App = () => {
             const pastScores = await Promise.all(refSheets.map(async (sheet) => {
                 if (!sheet) return 0;
                 const val = await sheetsService.getStudentValue(spreadsheetId, sheet, student.name.trim(), 'SUM');
-                return parseFloat(val) || 0;
+                // #REF! 등 숫자가 아닌 경우 0으로 처리하여 그래프 오류 방지
+                const num = parseFloat(val);
+                return isNaN(num) ? 0 : num;
             }));
 
-            const currentSum = parseFloat(student.scores['SUM']) || 0;
+            const currentSum = getCalculatedSum(student.scores, student.dept_type) || parseFloat(student.scores['SUM']) || 0;
 
             // 차트 데이터 유효성 및 순서 조정: 3학기전 -> 2학기전 -> 1학기전 -> 현재
             const chartData = [...pastScores].reverse();
@@ -302,7 +304,7 @@ const App = () => {
             }));
 
             // Sync top widgets (상단 위젯은 기존 인덱스 유지: [0]=1학기전, [2]=3학기전)
-            setRefScores([...pastScores.map(v => v || ''), currentSum || '']);
+            setRefScores([...pastScores.map(v => (v === undefined || v === null ? '' : v)), currentSum || '']);
         } catch (e) {
             console.error("Trend fetch error", e);
         }
