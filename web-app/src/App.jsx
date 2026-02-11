@@ -129,15 +129,21 @@ const App = () => {
             const headers = await sheetsService.getHeader(spreadsheetId, sheetName);
             setDynamicHeaders(headers);
 
-            // 시트에서 기존 참조 설정 불러오기 (lastmark 열의 2, 3, 4행)
-            const lmIdx = headers.indexOf('lastmark');
+            // 시트에서 기존 참조 설정 불러오기 (lastmark 또는 '지난 시험지' 열의 2, 3, 4행)
+            let lmIdx = headers.indexOf('lastmark');
+            if (lmIdx === -1) lmIdx = headers.indexOf('지난 시험지');
+            if (lmIdx === -1) lmIdx = headers.indexOf('지난시험지');
+
             if (lmIdx !== -1) {
+                const colLetter = sheetsService.getColLetter(lmIdx);
                 const resp = await window.gapi.client.sheets.spreadsheets.values.get({
                     spreadsheetId,
-                    range: `${sheetName}!${sheetsService.getColLetter(lmIdx)}2:${sheetsService.getColLetter(lmIdx)}4`
+                    range: `'${sheetName}'!${colLetter}2:${colLetter}4`
                 });
                 const existingLabels = resp.result.values?.map(v => v[0] || '') || ['', '', ''];
                 setRefSheets(existingLabels);
+            } else {
+                setRefSheets(['', '', '']);
             }
 
 
@@ -479,7 +485,12 @@ const App = () => {
         try {
             const res = await sheetsService.renameSheet(spreadsheetId, oldName, newNameInput.trim());
             if (res.status === 'SUCCESS') {
-                if (activeTab === oldName) setActiveTab(newNameInput.trim());
+                const newTitle = newNameInput.trim();
+                // 중요: 활성 탭 이름을 먼저 변경하고 데이터를 즉시 다시 로드합니다.
+                if (activeTab === oldName) {
+                    setActiveTab(newTitle);
+                    await loadStudentData(newTitle);
+                }
                 await loadSheetNames();
             } else { alert('이름 변경 실패: ' + res.message); }
         } catch (e) { alert('오류: ' + e.message); }
