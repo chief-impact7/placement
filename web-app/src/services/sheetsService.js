@@ -87,7 +87,7 @@ class SheetsService {
             // 1. 헤더 읽기
             const response = await window.gapi.client.sheets.spreadsheets.values.get({
                 spreadsheetId: spreadsheetId,
-                range: `${sheetName}!1:1`,
+                range: `'${sheetName}'!1:1`,
             });
             const headerRow = response.result.values[0];
 
@@ -96,7 +96,7 @@ class SheetsService {
             const colLetter = this.getColLetter(nameColIndex !== -1 ? nameColIndex : 0);
             const rowsResponse = await window.gapi.client.sheets.spreadsheets.values.get({
                 spreadsheetId: spreadsheetId,
-                range: `${sheetName}!${colLetter}:${colLetter}`,
+                range: `'${sheetName}'!${colLetter}:${colLetter}`,
             });
             const lastRow = (rowsResponse.result.values || []).length;
             const targetRow = lastRow + 1;
@@ -120,7 +120,7 @@ class SheetsService {
                 if (idx !== -1) {
                     if (val !== undefined) {
                         updates.push({
-                            range: `${sheetName}!${this.getColLetter(idx)}${targetRow}`,
+                            range: `'${sheetName}'!${this.getColLetter(idx)}${targetRow}`,
                             values: [[val]]
                         });
                     }
@@ -133,7 +133,7 @@ class SheetsService {
                 if (idx !== -1) {
                     if (val !== undefined) {
                         updates.push({
-                            range: `${sheetName}!${this.getColLetter(idx)}${targetRow}`,
+                            range: `'${sheetName}'!${this.getColLetter(idx)}${targetRow}`,
                             values: [[val]]
                         });
                     }
@@ -160,7 +160,7 @@ class SheetsService {
         try {
             const response = await window.gapi.client.sheets.spreadsheets.values.get({
                 spreadsheetId: spreadsheetId,
-                range: `${sheetName}!A:ZZ`,
+                range: `'${sheetName}'!A:ZZ`,
             });
             const rows = response.result.values || [];
             if (rows.length < 2) return [];
@@ -225,7 +225,7 @@ class SheetsService {
         try {
             const headerResponse = await window.gapi.client.sheets.spreadsheets.values.get({
                 spreadsheetId: spreadsheetId,
-                range: `${sheetName}!1:1`,
+                range: `'${sheetName}'!1:1`,
             });
             const headerRow = headerResponse.result.values[0];
 
@@ -248,7 +248,7 @@ class SheetsService {
                 const colIdx = this.findHeaderIndex(headerRow, key);
                 if (colIdx !== -1 && value !== undefined) {
                     updates.push({
-                        range: `${sheetName}!${this.getColLetter(colIdx)}${rowNumber}`,
+                        range: `'${sheetName}'!${this.getColLetter(colIdx)}${rowNumber}`,
                         values: [[value]]
                     });
                 }
@@ -276,7 +276,7 @@ class SheetsService {
         try {
             const response = await window.gapi.client.sheets.spreadsheets.values.get({
                 spreadsheetId: spreadsheetId,
-                range: `${sheetName}!1:1`,
+                range: `'${sheetName}'!1:1`,
             });
             const header = response.result.values[0];
             let scoreIndex = this.findHeaderIndex(header, "시험종류");
@@ -296,7 +296,7 @@ class SheetsService {
         try {
             const response = await window.gapi.client.sheets.spreadsheets.values.get({
                 spreadsheetId: spreadsheetId,
-                range: `${sheetName}!A:ZZ`,
+                range: `'${sheetName}'!A:ZZ`,
             });
             const rows = response.result.values || [];
             if (rows.length < 2) return null;
