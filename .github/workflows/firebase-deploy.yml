@@ -4,12 +4,16 @@ on:
   push:
     branches:
       - main
-      - claude/impact7-score-entry-setup-Xbg20
-  pull_request:
+      - master
+    paths:
+      - 'web-app/**'
+      - '.github/workflows/firebase-deploy.yml'
+  workflow_dispatch:
 
 jobs:
-  build_and_deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -26,20 +30,19 @@ jobs:
           cd web-app
           npm ci
 
-      - name: Create .env file
-        run: |
-          cd web-app
-          echo "VITE_GOOGLE_API_KEY=${{ secrets.VITE_GOOGLE_API_KEY }}" >> .env
-          echo "VITE_GOOGLE_CLIENT_ID=${{ secrets.VITE_GOOGLE_CLIENT_ID }}" >> .env
-          echo "VITE_SPREADSHEET_ID=${{ secrets.VITE_SPREADSHEET_ID }}" >> .env
-
-      - name: Build
+      - name: Build application
         run: |
           cd web-app
           npm run build
+        env:
+          VITE_GOOGLE_API_KEY: ${{ secrets.VITE_GOOGLE_API_KEY }}
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+          VITE_SPREADSHEET_ID: ${{ secrets.VITE_SPREADSHEET_ID }}
 
-      - name: Deploy to Firebase Hosting
-        run: |
-          npm install -g firebase-tools
-          cd web-app
-          firebase deploy --only hosting --token "${{ secrets.FIREBASE_TOKEN }}"
+      - name: Deploy to Firebase
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          channelId: live
+          projectId: inputplacement
