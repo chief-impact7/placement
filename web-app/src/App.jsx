@@ -25,15 +25,18 @@ const getLocalTodayStr = () => {
 const DEPT_SPECS = {
     '초등부': {
         fields: ['L/C (Raw)', 'Voca (Raw)', 'Gr (Raw)', 'R/C (Raw)', 'Syn (Raw)', '개별보정 (Raw)'],
-        limits: { 'L/C (Raw)': 10, 'Voca (Raw)': 25, 'Gr (Raw)': 25, 'R/C (Raw)': 15, 'Syn (Raw)': 25, '개별보정 (Raw)': 100 }
+        limits: { 'L/C (Raw)': 20, 'Voca (Raw)': 15, 'Gr (Raw)': 15, 'R/C (Raw)': 15, 'Syn (Raw)': 25, '개별보정 (Raw)': 100 },
+        units: { 'L/C (Raw)': '개', 'Voca (Raw)': '개', 'Gr (Raw)': '개', 'R/C (Raw)': '개', 'Syn (Raw)': '점', '개별보정 (Raw)': '포인트' }
     },
     '중등부': {
         fields: ['L/C (Raw)', 'Voca (Raw)', 'Gr (Raw)', 'R/C (Raw)', 'Syn (Raw)', '개별보정 (Raw)'],
-        limits: { 'L/C (Raw)': 10, 'Voca (Raw)': 25, 'Gr (Raw)': 25, 'R/C (Raw)': 15, 'Syn (Raw)': 25, '개별보정 (Raw)': 100 }
+        limits: { 'L/C (Raw)': 20, 'Voca (Raw)': 20, 'Gr (Raw)': 20, 'R/C (Raw)': 20, 'Syn (Raw)': 25, '개별보정 (Raw)': 100 },
+        units: { 'L/C (Raw)': '개', 'Voca (Raw)': '개', 'Gr (Raw)': '개', 'R/C (Raw)': '개', 'Syn (Raw)': '점', '개별보정 (Raw)': '포인트' }
     },
     '고등부': {
         fields: ['청해 (Raw)', '대의파악 (Raw)', '문법어휘 (Raw)', '세부사항 (Raw)', '빈칸추론 (Raw)', '간접쓰기 (Raw)'],
-        limits: { '청해 (Raw)': 10, '대의파악 (Raw)': 5, '문법어휘 (Raw)': 10, '세부사항 (Raw)': 5, '빈칸추론 (Raw)': 10, '간접쓰기 (Raw)': 10 }
+        limits: { '청해 (Raw)': 10, '대의파악 (Raw)': 5, '문법어휘 (Raw)': 10, '세부사항 (Raw)': 5, '빈칸추론 (Raw)': 10, '간접쓰기 (Raw)': 10 },
+        units: { '청해 (Raw)': '개', '대의파악 (Raw)': '개', '문법어휘 (Raw)': '개', '세부사항 (Raw)': '개', '빈칸추론 (Raw)': '개', '간접쓰기 (Raw)': '개' }
     }
 };
 
@@ -394,7 +397,8 @@ const App = () => {
             const spec = DEPT_SPECS[formData.dept_type];
             if (spec && spec.limits[field] !== undefined) {
                 if (numVal > spec.limits[field]) {
-                    alert(`${field} 과목의 최대 점수는 ${spec.limits[field]}점입니다.`);
+                    const unit = spec.units ? (spec.units[field] || '점') : '점';
+                    alert(`${field} 과목의 최대값은 ${spec.limits[field]}${unit}입니다.`);
                     return;
                 }
             }
@@ -635,31 +639,31 @@ const App = () => {
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                         {/* 새 시험 성적표 생성 카드 (왼쪽으로 원복) */}
                         <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl p-10 flex flex-col h-[450px]">
-                            <h3 className="text-sm font-black text-slate-900 mb-10 flex items-center gap-3 uppercase tracking-widest">
+                            <h3 className="text-base font-black text-slate-900 mb-10 flex items-center gap-3 uppercase tracking-widest">
                                 <PlusCircle className="w-5 h-5 text-blue-600" /> 새 시험 성적표 생성
                             </h3>
                             <div className="space-y-6 flex-1 overflow-y-auto custom-scrollbar pr-2">
                                 <div>
-                                    <label className="text-[11px] font-black text-slate-400 uppercase mb-2 block">새 시험 이름</label>
+                                    <label className="text-[12px] font-black text-slate-400 uppercase mb-2 block">새 시험 이름</label>
                                     <input type="text" value={newName} onChange={e => setNewName(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 text-sm font-black focus:border-blue-500 focus:bg-white outline-none transition-all placeholder:text-slate-300" placeholder="예: 2026_02_모의평가" />
                                 </div>
                                 <div>
-                                    <label className="text-[11px] font-black text-slate-400 uppercase mb-2 block">학부 템플릿 선택</label>
+                                    <label className="text-[12px] font-black text-slate-400 uppercase mb-2 block">학부 템플릿 선택</label>
                                     <select value={prevSheetName} onChange={e => setPrevSheetName(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 text-sm font-black focus:border-blue-500 focus:bg-white outline-none transition-all">
                                         <option value="">템플릿 선택</option>
                                         {templates.map(n => <option key={n} value={n}>{n.replace('Template_', '')}</option>)}
                                     </select>
                                 </div>
                                 <div className="grid grid-cols-3 gap-3">
-                                    <select value={refSheets[0]} onChange={e => handleRefSheetChange(0, e.target.value)} className="bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-2.5 text-[10px] font-black focus:border-blue-500 outline-none">
+                                    <select value={refSheets[0]} onChange={e => handleRefSheetChange(0, e.target.value)} className="bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-2.5 text-[11px] font-black focus:border-blue-500 outline-none">
                                         <option value="">1학기 전</option>
                                         {allTabNames.map(n => <option key={n} value={n}>{n}</option>)}
                                     </select>
-                                    <select value={refSheets[1]} onChange={e => handleRefSheetChange(1, e.target.value)} className="bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-2.5 text-[10px] font-black focus:border-blue-500 outline-none">
+                                    <select value={refSheets[1]} onChange={e => handleRefSheetChange(1, e.target.value)} className="bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-2.5 text-[11px] font-black focus:border-blue-500 outline-none">
                                         <option value="">2학기 전</option>
                                         {allTabNames.map(n => <option key={n} value={n}>{n}</option>)}
                                     </select>
-                                    <select value={refSheets[2]} onChange={e => handleRefSheetChange(2, e.target.value)} className="bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-2.5 text-[10px] font-black focus:border-blue-500 outline-none">
+                                    <select value={refSheets[2]} onChange={e => handleRefSheetChange(2, e.target.value)} className="bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-2.5 text-[11px] font-black focus:border-blue-500 outline-none">
                                         <option value="">3학기 전</option>
                                         {allTabNames.map(n => <option key={n} value={n}>{n}</option>)}
                                     </select>
@@ -671,7 +675,7 @@ const App = () => {
                         {/* 시험지 목록 카드 (오른쪽으로 이동) */}
                         <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl overflow-hidden flex flex-col h-[450px]">
                             <div className="p-8 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-                                <h3 className="text-sm font-black text-slate-900 flex items-center gap-3 uppercase tracking-widest">
+                                <h3 className="text-base font-black text-slate-900 flex items-center gap-3 uppercase tracking-widest">
                                     <Navigation className="w-5 h-5 text-blue-600" /> 시험지 목록 (TABS)
                                 </h3>
                                 <button onClick={loadSheetNames} className="p-3 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="새로고침">
@@ -803,7 +807,7 @@ const App = () => {
                                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
                                     <div className="flex items-center gap-4">
                                         <LayoutDashboard className="w-5 h-5 text-slate-400" />
-                                        <label className="text-sm font-black text-slate-900 uppercase tracking-[0.2em]">과목별 개수/점수 기록 (SCORE ENTRY)</label>
+                                        <label className="text-base font-black text-slate-900 uppercase tracking-[0.2em]">과목별 개수/점수 기록 (SCORE ENTRY)</label>
                                     </div>
 
                                     {/* 과거 및 현재 성적 대조 UI - 입력 필드 바로 위 배치 */}
@@ -815,7 +819,7 @@ const App = () => {
                                             { label: '이번 현재 합계', value: (currentFormSum !== null ? currentFormSum : (refScores[3] === '' ? '-' : refScores[3])), color: 'text-blue-600 font-black' }
                                         ].map((item, i) => (
                                             <div key={i} className="flex flex-col items-center px-6 py-2 bg-white rounded-xl shadow-sm border border-slate-100 min-w-[100px]">
-                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{item.label}</span>
+                                                <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1">{item.label}</span>
                                                 <span className={cn("text-lg font-black", item.color)}>
                                                     {item.value || '-'}
                                                 </span>
@@ -832,14 +836,17 @@ const App = () => {
                                         .map(header => {
                                             const spec = DEPT_SPECS[formData.dept_type];
                                             const max = spec ? spec.limits[header] : 100;
+                                            const unit = spec && spec.units ? (spec.units[header] || '') : '';
                                             return (
                                                 <div key={header} className="flex flex-col items-center space-y-2 p-3 bg-slate-50/50 rounded-2xl border border-transparent hover:border-blue-100 transition-all">
-                                                    <label className="text-[10px] font-black uppercase tracking-tighter text-slate-400 text-center leading-tight h-8 flex flex-col justify-center">
+                                                    <label className="text-[11px] font-black uppercase tracking-tighter text-slate-400 text-center leading-tight h-8 flex flex-col justify-center">
                                                         <span>{header.replace(/\(RAW\)/i, '(Raw)').trim()}</span>
-                                                        {max && <span className="text-[8px] text-slate-300 font-normal">MAX:{max}</span>}
+                                                        {max && <span className="text-[9px] text-slate-300 font-normal">MAX: {max}{unit}</span>}
                                                     </label>
                                                     <input
                                                         type="number"
+                                                        min="0"
+                                                        max={max}
                                                         value={(() => {
                                                             const norm = header.toLowerCase().replace(/\s+/g, '');
                                                             const key = Object.keys(formData.scores).find(k => k.toLowerCase().replace(/\s+/g, '') === norm);
@@ -847,7 +854,7 @@ const App = () => {
                                                         })()}
                                                         onChange={e => handleScoreChange(header, e.target.value)}
                                                         placeholder="0"
-                                                        className="w-16 h-10 bg-white border border-slate-200 rounded-xl px-0 text-center text-sm font-black outline-none focus:border-blue-500 transition-all shadow-sm"
+                                                        className="w-16 h-10 bg-white border border-slate-200 rounded-xl px-0 text-center text-base font-black outline-none focus:border-blue-500 transition-all shadow-sm"
                                                     />
                                                 </div>
                                             );
