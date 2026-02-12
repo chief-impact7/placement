@@ -1,0 +1,12 @@
+{
+  "buildCommand": "cd web-app && npm install && npm run build",
+  "outputDirectory": "web-app/dist",
+  "installCommand": "cd web-app && npm install",
+  "framework": null,
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
