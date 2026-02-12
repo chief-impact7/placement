@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
     Search, PlusCircle, Navigation, Save, RefreshCcw, CheckCircle2, Circle,
     Printer, FileText, Trash2, Pencil, X, History, User, Building2, Calendar,
-    ChevronDown, LayoutDashboard, Database, TrendingUp, LogIn
+    ChevronDown, LayoutDashboard, Database, TrendingUp, LogIn, GraduationCap,
+    BookOpen, Award
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
