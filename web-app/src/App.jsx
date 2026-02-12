@@ -1136,9 +1136,7 @@ const App = () => {
 
                     const headerScores = headerSubjects.map(subject => ({
                         subject,
-                        score: subject === 'SUM'
-                            ? (['L/C', 'Voca', 'Gr', 'R/C', 'Syn'].reduce((sum, s) => sum + (parseFloat(showReport.scores?.[s]) || 0), 0))
-                            : (parseFloat(showReport.scores?.[subject]) || 0)
+                        score: parseFloat(showReport.scores?.[subject]) || 0
                     }));
 
                     // 5과목 데이터 (기본 교과)
