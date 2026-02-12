@@ -1086,79 +1086,302 @@ const App = () => {
 
             {/* Report Modal */}
             {
-                showReport && (
-                    console.log("[DEBUG] Rendering Report Modal for:", showReport) || (showReport.scores ? true : console.error("[CRITICAL] showReport.scores is undefined!", showReport)) &&
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm">
-                        <div className="bg-white w-full max-w-4xl rounded-[3rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-                            <div className="px-10 py-8 bg-blue-600 flex justify-between items-center text-white">
-                                <div className="flex items-center gap-4">
-                                    <FileText className="w-6 h-6" />
-                                    <h2 className="text-xl font-black">종합 성적 리포트 (REPORT)</h2>
-                                </div>
-                                <button onClick={() => setShowReport(null)} className="p-2 hover:bg-white/10 rounded-full transition-all"><X className="w-6 h-6" /></button>
-                            </div>
+                showReport && (() => {
+                    // 학부 유추
+                    const dept_type = showReport.dept_type ||
+                        (['초4', '초5', '초6'].includes(showReport.grade) ? '초등부' :
+                         ['중1', '중2', '중3'].includes(showReport.grade) ? '중등부' : '고등부');
 
-                            <div className="p-12 print-container">
-                                <div className="border-b-4 border-blue-600 pb-10 mb-10">
-                                    <div className="flex justify-between items-end">
-                                        <div>
-                                            <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-[0.4em] mb-2">Individual Student Report</h4>
-                                            <h1 className="text-4xl font-black text-slate-900 tracking-tighter">{showReport?.name || 'Unknown'} 학생</h1>
-                                            <p className="text-sm text-slate-400 font-black mt-2">{showReport?.school} · {showReport?.grade}학년 · {showReport?.dept}</p>
-                                            {showReport?.ref && <p className="text-[10px] text-blue-500 font-black mt-1 uppercase tracking-tighter">Reference: {showReport.ref}</p>}
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Testing Date</p>
-                                            <p className="text-lg font-black text-slate-900">{showReport?.date}</p>
-                                        </div>
-                                    </div>
-                                </div>
+                    // 학부별 배경 스타일
+                    const deptStyles = {
+                        '초등부': 'bg-gradient-to-br from-yellow-50 via-orange-50 to-pink-50',
+                        '중등부': 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50',
+                        '고등부': 'bg-gradient-to-br from-gray-50 via-slate-100 to-gray-100'
+                    };
 
-                                <div className="grid grid-cols-2 gap-12 mb-12">
-                                    <div className="space-y-6">
-                                        <h5 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                            <CheckCircle2 className="w-4 h-4 text-blue-600" /> 세부 영역별 성적
-                                        </h5>
-                                        <div className="space-y-3">
-                                            {showReport?.scores ? Object.entries(showReport.scores).map(([key, val]) => (
-                                                <div key={key} className="flex justify-between items-center p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                                                    <span className="text-sm font-black text-slate-700 uppercase tracking-tighter">{key}</span>
-                                                    <div className="flex items-baseline gap-1">
-                                                        <span className="text-xl font-black text-slate-900">{val || 0}</span>
+                    // 레이더 차트 데이터 준비
+                    const radarCategories = ['L/C', 'Voca', 'Gr', 'R/C', 'Syn', 'SUM'];
+                    const radarData = {
+                        student: radarCategories.map(cat => parseFloat(showReport.scores?.[cat]) || 0),
+                        percentile30: radarCategories.map(cat => parseFloat(showReport.scores?.[`${cat}(30%)`]) || 0),
+                        average: radarCategories.map(cat => parseFloat(showReport.scores?.[`${cat}(av)`]) || 0)
+                    };
+
+                    // 막대 그래프 데이터 준비
+                    const barCategories = ['EnglishSense', 'EnglishLogic', 'GPAindex', 'CSATindex'];
+                    const barData = {
+                        student: barCategories.map(cat => parseFloat(showReport.scores?.[cat]) || 0),
+                        percentile30: barCategories.map(cat => parseFloat(showReport.scores?.[`${cat}(30%)`]) || 0),
+                        average: barCategories.map(cat => parseFloat(showReport.scores?.[`${cat}(av)`]) || 0)
+                    };
+
+                    // 레이더 차트 SVG 생성 함수
+                    const createRadarChart = () => {
+                        const size = 300;
+                        const center = size / 2;
+                        const maxValue = 100;
+                        const levels = 5;
+                        const angleStep = (Math.PI * 2) / radarCategories.length;
+
+                        // 좌표 계산 함수
+                        const getPoint = (value, index, radius = 120) => {
+                            const angle = angleStep * index - Math.PI / 2;
+                            const r = (value / maxValue) * radius;
+                            return {
+                                x: center + r * Math.cos(angle),
+                                y: center + r * Math.sin(angle)
+                            };
+                        };
+
+                        // 폴리곤 포인트 생성
+                        const createPolygon = (values, radius = 120) => {
+                            return values.map((v, i) => {
+                                const point = getPoint(v, i, radius);
+                                return `${point.x},${point.y}`;
+                            }).join(' ');
+                        };
+
+                        return (
+                            <svg width={size} height={size} className="mx-auto">
+                                {/* 배경 레벨 */}
+                                {[...Array(levels)].map((_, i) => {
+                                    const radius = ((i + 1) / levels) * 120;
+                                    const points = radarCategories.map((_, idx) => {
+                                        const point = getPoint(maxValue, idx, radius);
+                                        return `${point.x},${point.y}`;
+                                    }).join(' ');
+                                    return (
+                                        <polygon
+                                            key={i}
+                                            points={points}
+                                            fill="none"
+                                            stroke="#e2e8f0"
+                                            strokeWidth="1"
+                                        />
+                                    );
+                                })}
+
+                                {/* 축 선 */}
+                                {radarCategories.map((cat, i) => {
+                                    const point = getPoint(maxValue, i);
+                                    return (
+                                        <line
+                                            key={i}
+                                            x1={center}
+                                            y1={center}
+                                            x2={point.x}
+                                            y2={point.y}
+                                            stroke="#cbd5e1"
+                                            strokeWidth="1"
+                                        />
+                                    );
+                                })}
+
+                                {/* 평균 데이터 (가장 뒤) */}
+                                <polygon
+                                    points={createPolygon(radarData.average)}
+                                    fill="rgba(148, 163, 184, 0.1)"
+                                    stroke="#94a3b8"
+                                    strokeWidth="2"
+                                />
+
+                                {/* 30% 백분위 데이터 */}
+                                <polygon
+                                    points={createPolygon(radarData.percentile30)}
+                                    fill="rgba(251, 191, 36, 0.1)"
+                                    stroke="#f59e0b"
+                                    strokeWidth="2"
+                                />
+
+                                {/* 학생 데이터 (가장 앞) */}
+                                <polygon
+                                    points={createPolygon(radarData.student)}
+                                    fill="rgba(37, 99, 235, 0.2)"
+                                    stroke="#2563eb"
+                                    strokeWidth="3"
+                                />
+
+                                {/* 데이터 포인트 */}
+                                {radarData.student.map((v, i) => {
+                                    const point = getPoint(v, i);
+                                    return (
+                                        <circle
+                                            key={i}
+                                            cx={point.x}
+                                            cy={point.y}
+                                            r="4"
+                                            fill="#2563eb"
+                                        />
+                                    );
+                                })}
+
+                                {/* 카테고리 라벨 */}
+                                {radarCategories.map((cat, i) => {
+                                    const labelPoint = getPoint(maxValue, i, 140);
+                                    return (
+                                        <text
+                                            key={i}
+                                            x={labelPoint.x}
+                                            y={labelPoint.y}
+                                            textAnchor="middle"
+                                            dominantBaseline="middle"
+                                            className="text-xs font-black fill-slate-700"
+                                        >
+                                            {cat}
+                                        </text>
+                                    );
+                                })}
+                            </svg>
+                        );
+                    };
+
+                    // 막대 그래프 생성 함수
+                    const createBarChart = () => {
+                        const maxValue = Math.max(...barData.student, ...barData.percentile30, ...barData.average, 100);
+                        return (
+                            <div className="space-y-6">
+                                {barCategories.map((cat, idx) => (
+                                    <div key={cat} className="space-y-2">
+                                        <div className="text-xs font-black text-slate-700">{cat}</div>
+                                        <div className="flex gap-2 items-center">
+                                            {/* 학생 점수 */}
+                                            <div className="flex-1 space-y-1">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-full bg-slate-100 rounded-full h-6 overflow-hidden">
+                                                        <div
+                                                            className="bg-blue-600 h-full flex items-center justify-end pr-2"
+                                                            style={{ width: `${(barData.student[idx] / maxValue) * 100}%` }}
+                                                        >
+                                                            <span className="text-[10px] font-black text-white">
+                                                                {barData.student[idx]}
+                                                            </span>
+                                                        </div>
                                                     </div>
+                                                    <span className="text-[10px] text-slate-400 w-16">본인</span>
                                                 </div>
-                                            )) : <p className="text-red-500">성적 데이터를 불러올 수 없습니다.</p>}
-                                            {showReport?.scores && Object.keys(showReport.scores).length === 0 && <p className="text-center text-slate-300 py-4 italic">표시할 성적 항목이 없습니다.</p>}
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-full bg-slate-100 rounded-full h-6 overflow-hidden">
+                                                        <div
+                                                            className="bg-amber-500 h-full flex items-center justify-end pr-2"
+                                                            style={{ width: `${(barData.percentile30[idx] / maxValue) * 100}%` }}
+                                                        >
+                                                            <span className="text-[10px] font-black text-white">
+                                                                {barData.percentile30[idx]}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <span className="text-[10px] text-slate-400 w-16">상위30%</span>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-full bg-slate-100 rounded-full h-6 overflow-hidden">
+                                                        <div
+                                                            className="bg-slate-400 h-full flex items-center justify-end pr-2"
+                                                            style={{ width: `${(barData.average[idx] / maxValue) * 100}%` }}
+                                                        >
+                                                            <span className="text-[10px] font-black text-white">
+                                                                {barData.average[idx]}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <span className="text-[10px] text-slate-400 w-16">평균</span>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
+                                ))}
+                            </div>
+                        );
+                    };
 
-                                    <div className="flex flex-col justify-center items-center bg-blue-50/50 rounded-[3rem] p-10 border-2 border-blue-100 border-dashed">
-                                        <div className="w-32 h-32 bg-white rounded-full flex flex-col items-center justify-center shadow-2xl shadow-blue-100 border-8 border-blue-600">
-                                            <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Total</span>
-                                            <span className="text-4xl font-black text-slate-900">
-                                                {showReport?.scores?.['SUM'] || 0}
-                                            </span>
-                                        </div>
-                                        <div className="mt-10 text-center">
-                                            <h4 className="text-sm font-black text-blue-700 mb-1">성적 분석 요약</h4>
-                                            <p className="text-[11px] text-slate-500 font-black leading-relaxed">
-                                                해당 학생은 {showReport?.type} 전형에 응시하였으며,<br />
-                                                {showReport?.scores && Object.values(showReport.scores).every(v => v !== '') ? '모든 평가 영역이 성실하게 완료되었습니다.' : '일부 영역의 재평가가 필요할 수 있습니다.'}
-                                            </p>
-                                        </div>
-                                    </div>
+                    return (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm overflow-auto">
+                            <div className={cn("w-full max-w-[210mm] min-h-[297mm] rounded-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 my-8 print:my-0 print:shadow-none print:rounded-none", deptStyles[dept_type] || deptStyles['중등부'])}>
+                                {/* 화면 전용 닫기 버튼 */}
+                                <div className="print:hidden absolute top-4 right-4 z-10">
+                                    <button onClick={() => setShowReport(null)} className="p-3 bg-white rounded-full shadow-lg hover:bg-slate-100 transition-all">
+                                        <X className="w-6 h-6 text-slate-700" />
+                                    </button>
                                 </div>
 
-                                <div className="flex justify-between items-center pt-8 border-t border-slate-100">
-                                    <p className="text-[10px] font-black text-slate-300 uppercase italic">Power by IMPACT7 Data Service</p>
-                                    <button onClick={() => window.print()} className="flex items-center gap-2 bg-slate-900 text-white font-black px-8 py-3 rounded-2xl hover:bg-black shadow-lg shadow-slate-100">
-                                        <Printer className="w-4 h-4" /> 리포트 인쇄하기
-                                    </button>
+                                {/* A4 페이지 컨테이너 */}
+                                <div className="p-12 space-y-8">
+                                    {/* 학생 개인정보 */}
+                                    <div className="text-center space-y-4 pb-8 border-b-4 border-blue-600">
+                                        <h1 className="text-4xl font-black text-slate-900 tracking-tight">성적표</h1>
+                                        <div className="grid grid-cols-4 gap-4 max-w-3xl mx-auto mt-6">
+                                            <div className="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-slate-200">
+                                                <div className="text-[10px] text-slate-500 font-black mb-1">이름</div>
+                                                <div className="text-lg font-black text-slate-900">{showReport.name}</div>
+                                            </div>
+                                            <div className="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-slate-200">
+                                                <div className="text-[10px] text-slate-500 font-black mb-1">학교학년</div>
+                                                <div className="text-lg font-black text-slate-900">{showReport.school} {showReport.grade}</div>
+                                            </div>
+                                            <div className="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-slate-200">
+                                                <div className="text-[10px] text-slate-500 font-black mb-1">응시일</div>
+                                                <div className="text-lg font-black text-slate-900">{showReport.date}</div>
+                                            </div>
+                                            <div className="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-slate-200">
+                                                <div className="text-[10px] text-slate-500 font-black mb-1">시험종류</div>
+                                                <div className="text-lg font-black text-slate-900">{showReport.type}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* 2단 그리드: 성적테이블 + 레이더차트 */}
+                                    <div className="grid grid-cols-2 gap-8">
+                                        {/* 좌측: 성적테이블 */}
+                                        <div className="bg-white/70 backdrop-blur-sm p-6 rounded-2xl border border-slate-200">
+                                            <h3 className="text-sm font-black text-slate-700 mb-4 uppercase tracking-wider">과목별 성적</h3>
+                                            <div className="space-y-2">
+                                                {radarCategories.map(cat => (
+                                                    <div key={cat} className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
+                                                        <span className="text-xs font-black text-slate-600">{cat}</span>
+                                                        <span className="text-lg font-black text-slate-900">{showReport.scores?.[cat] || 0}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* 우측: 레이더차트 */}
+                                        <div className="bg-white/70 backdrop-blur-sm p-6 rounded-2xl border border-slate-200">
+                                            <h3 className="text-sm font-black text-slate-700 mb-4 uppercase tracking-wider text-center">성적 분석 차트</h3>
+                                            {createRadarChart()}
+                                            <div className="flex justify-center gap-4 mt-4">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-4 h-4 bg-blue-600 rounded"></div>
+                                                    <span className="text-[10px] font-black text-slate-600">본인</span>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-4 h-4 bg-amber-500 rounded"></div>
+                                                    <span className="text-[10px] font-black text-slate-600">상위30%</span>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-4 h-4 bg-slate-400 rounded"></div>
+                                                    <span className="text-[10px] font-black text-slate-600">평균</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* 비교 막대 그래프 */}
+                                    <div className="bg-white/70 backdrop-blur-sm p-6 rounded-2xl border border-slate-200">
+                                        <h3 className="text-sm font-black text-slate-700 mb-6 uppercase tracking-wider">종합 지표 비교</h3>
+                                        {createBarChart()}
+                                    </div>
+
+                                    {/* 하단 푸터 */}
+                                    <div className="flex justify-between items-center pt-6 border-t border-slate-200">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase">IMPACT7 Data Service</p>
+                                        <button onClick={() => window.print()} className="print:hidden flex items-center gap-2 bg-blue-600 text-white font-black px-6 py-3 rounded-xl hover:bg-blue-700 shadow-lg transition-all">
+                                            <Printer className="w-4 h-4" /> 인쇄하기
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                )
+                    );
+                })()
             }
         </div >
     );

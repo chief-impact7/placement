@@ -1,1 +1,76 @@
 @import "tailwindcss";
+
+/* 인쇄 스타일 */
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+  /* 인쇄 시 불필요한 요소 숨기기 */
+  .print\\:hidden {
+    display: none !important;
+  }
+
+  /* A4 페이지 크기 강제 */
+  .print\\:w-full {
+    width: 210mm !important;
+  }
+
+  .print\\:h-full {
+    min-height: 297mm !important;
+  }
+
+  /* 그림자 제거 */
+  .print\\:shadow-none {
+    box-shadow: none !important;
+  }
+
+  /* 둥근 모서리 제거 */
+  .print\\:rounded-none {
+    border-radius: 0 !important;
+  }
+
+  /* 여백 제거 */
+  .print\\:my-0 {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
+
+  /* 페이지 나누기 방지 */
+  .print-container {
+    page-break-inside: avoid;
+  }
+
+  /* 배경 그라디언트 인쇄 */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+}
+
+/* 커스텀 스크롤바 */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
