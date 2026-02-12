@@ -738,7 +738,16 @@ const App = () => {
                                     <Navigation className="w-6 h-6 text-white ml-2 shrink-0" />
                                     <select value={activeTab} onChange={e => setActiveTab(e.target.value)} className="w-full bg-transparent text-white text-base font-black outline-none border-none focus:ring-0 appearance-none cursor-pointer truncate">
                                         <option value="" className="text-slate-900">현재 대상 시험지 선택</option>
-                                        {allTabNames.map(n => <option key={n} value={n} className="text-slate-900">{n}</option>)}
+                                        {allTabNames
+                                            .filter(n => {
+                                                if (!formData.dept_type) return true;
+                                                if (formData.dept_type === '초등부') return n.startsWith('초');
+                                                if (formData.dept_type === '중등부') return n.startsWith('중');
+                                                if (formData.dept_type === '고등부') return n.startsWith('고');
+                                                return true;
+                                            })
+                                            .map(n => <option key={n} value={n} className="text-slate-900">{n}</option>)
+                                        }
                                     </select>
                                     {activeTab && <span className="text-[11px] font-black bg-white text-blue-600 px-4 py-1.5 rounded-full shrink-0 mr-1 shadow-sm uppercase tracking-tighter">Active</span>}
                                 </div>
