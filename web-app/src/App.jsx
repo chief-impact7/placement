@@ -1128,6 +1128,19 @@ const App = () => {
                         title: "학업 성취 분석표"
                     };
 
+                    // 학부별 주요 과목 데이터 (학생 정보 섹션용)
+                    const isHighSchool = dept_type === '고등부';
+                    const headerSubjects = isHighSchool
+                        ? ['청해', '대의파악', '문법어휘', '세부사항', '빈칸추론', '간접쓰기']
+                        : ['L/C', 'Voca', 'Gr', 'R/C', 'Syn', 'SUM'];
+
+                    const headerScores = headerSubjects.map(subject => ({
+                        subject,
+                        score: subject === 'SUM'
+                            ? (['L/C', 'Voca', 'Gr', 'R/C', 'Syn'].reduce((sum, s) => sum + (parseFloat(showReport.scores?.[s]) || 0), 0))
+                            : (parseFloat(showReport.scores?.[subject]) || 0)
+                    }));
+
                     // 5과목 데이터 (기본 교과)
                     const data5 = ['L/C', 'Voca', 'Gr', 'R/C', 'Syn'].map(subject => ({
                         subject,
@@ -1391,11 +1404,14 @@ const App = () => {
                                     </div>
 
                                     {/* 학생 정보 */}
-                                    <div className={`grid grid-cols-4 gap-4 mb-8 p-4 rounded-2xl ${theme.secondary} border ${theme.border}`}>
+                                    <div className={`grid grid-cols-5 gap-4 mb-8 p-4 rounded-2xl ${theme.secondary} border ${theme.border}`}>
+                                        {/* 사진 영역 */}
                                         <div className="col-span-1 bg-white rounded-xl flex items-center justify-center border border-slate-200 h-32">
                                             <User size={48} className="text-slate-300" />
                                         </div>
-                                        <div className="col-span-3 grid grid-cols-2 gap-4 h-full content-center">
+
+                                        {/* 기본 정보 */}
+                                        <div className="col-span-2 flex flex-col justify-center gap-3">
                                             <div className="flex justify-between border-b border-slate-300 py-1 px-2">
                                                 <span className="text-xs font-bold text-slate-500">성명</span>
                                                 <span className="text-sm font-black">{showReport.name}</span>
@@ -1404,11 +1420,17 @@ const App = () => {
                                                 <span className="text-xs font-bold text-slate-500">학년</span>
                                                 <span className="text-sm font-black">{showReport.grade}</span>
                                             </div>
-                                            <div className="col-span-2 flex justify-between border-b border-slate-300 py-1 px-2">
-                                                <span className="text-xs font-bold text-slate-500">종합 의견</span>
-                                                <span className="text-xs font-medium text-slate-600">
-                                                    {isElementary ? '교우 관계가 원만하고 모든 활동에 즐겁게 참여합니다.' : '학업 성취도가 높으며 특히 수리 분석 능력이 우수함.'}
-                                                </span>
+                                        </div>
+
+                                        {/* 과목별 점수 그리드 */}
+                                        <div className="col-span-2 bg-white rounded-xl border border-red-300 p-3">
+                                            <div className="grid grid-cols-3 gap-2 h-full">
+                                                {headerScores.map((item, i) => (
+                                                    <div key={i} className="flex flex-col items-center justify-center">
+                                                        <span className="text-[9px] font-bold text-slate-500 mb-1">{item.subject}</span>
+                                                        <span className="text-sm font-black text-slate-800">{item.score}</span>
+                                                    </div>
+                                                ))}
                                             </div>
                                         </div>
                                     </div>
@@ -1511,6 +1533,75 @@ const App = () => {
                                                     <div className="text-[10px] text-slate-500 font-bold mb-1">학습 제안</div>
                                                     <div className="text-[11px] text-slate-700 leading-relaxed">{aiAnalysis.recommendation}</div>
                                                 </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* 하단: 목록 + 추세 그래프 (4:1 비율) */}
+                                    <div className="grid grid-cols-5 gap-6 mb-10 mt-10 pt-8 border-t-2 border-slate-100">
+                                        {/* 좌측: 목록 (4/5) */}
+                                        <div className="col-span-4">
+                                            <div className={`flex items-center gap-2 mb-4 ${theme.text}`}>
+                                                <BookOpen size={18} />
+                                                <h3 className="text-base font-bold">학습 활동 기록</h3>
+                                            </div>
+                                            <div className="space-y-2">
+                                                {[
+                                                    { date: '2026-01-15', activity: '단어 테스트', score: '85/100' },
+                                                    { date: '2026-01-22', activity: '문법 평가', score: '92/100' },
+                                                    { date: '2026-01-29', activity: '독해 연습', score: '88/100' },
+                                                    { date: '2026-02-05', activity: '듣기 평가', score: '90/100' },
+                                                    { date: '2026-02-12', activity: '종합 평가', score: '91/100' }
+                                                ].map((item, i) => (
+                                                    <div key={i} className="flex items-center justify-between bg-slate-50 p-3 rounded-lg border border-slate-200">
+                                                        <div className="flex items-center gap-4">
+                                                            <span className="text-xs text-slate-500 font-medium w-20">{item.date}</span>
+                                                            <span className="text-sm font-bold text-slate-700">{item.activity}</span>
+                                                        </div>
+                                                        <span className="text-sm font-black text-blue-600">{item.score}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* 우측: 추세 그래프 (1/5) */}
+                                        <div className="col-span-1">
+                                            <div className={`flex items-center gap-2 mb-4 ${theme.text}`}>
+                                                <TrendingUp size={18} />
+                                                <h3 className="text-xs font-bold">추세</h3>
+                                            </div>
+                                            <div className="border border-slate-200 rounded-xl p-3 bg-slate-50 h-64">
+                                                <svg viewBox="0 0 100 150" className="w-full h-full">
+                                                    {/* 배경 그리드 */}
+                                                    {[0, 25, 50, 75, 100].map((y) => (
+                                                        <line key={y} x1="10" y1={10 + y} x2="90" y2={10 + y} stroke="#e2e8f0" strokeWidth="0.5" />
+                                                    ))}
+
+                                                    {/* 추세선 */}
+                                                    <polyline
+                                                        points="10,90 30,75 50,80 70,65 90,60"
+                                                        fill="none"
+                                                        stroke="#3b82f6"
+                                                        strokeWidth="2"
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                    />
+
+                                                    {/* 데이터 포인트 */}
+                                                    {[
+                                                        { x: 10, y: 90 },
+                                                        { x: 30, y: 75 },
+                                                        { x: 50, y: 80 },
+                                                        { x: 70, y: 65 },
+                                                        { x: 90, y: 60 }
+                                                    ].map((point, i) => (
+                                                        <circle key={i} cx={point.x} cy={point.y} r="2" fill="#3b82f6" />
+                                                    ))}
+
+                                                    {/* Y축 레이블 */}
+                                                    <text x="2" y="15" fontSize="6" fill="#64748b">100</text>
+                                                    <text x="2" y="110" fontSize="6" fill="#64748b">0</text>
+                                                </svg>
                                             </div>
                                         </div>
                                     </div>
