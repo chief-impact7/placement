@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
     Search, PlusCircle, Navigation, Save, RefreshCcw, CheckCircle2, Circle,
     Printer, FileText, Trash2, Pencil, X, History, User, Building2, Calendar,
-    ChevronDown, LayoutDashboard, Database, TrendingUp, LogIn
+    ChevronDown, LayoutDashboard, Database, TrendingUp, LogIn, GraduationCap,
+    BookOpen, Award, School
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -1101,28 +1102,86 @@ const App = () => {
                         (['초4', '초5', '초6'].includes(showReport.grade) ? '초등부' :
                          ['중1', '중2', '중3'].includes(showReport.grade) ? '중등부' : '고등부');
 
-                    // 학부별 배경 스타일
-                    const deptStyles = {
-                        '초등부': 'bg-gradient-to-br from-yellow-50 via-orange-50 to-pink-50',
-                        '중등부': 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50',
-                        '고등부': 'bg-gradient-to-br from-gray-50 via-slate-100 to-gray-100'
+                    const isElementary = dept_type === '초등부';
+
+                    // 학부별 테마
+                    const theme = isElementary ? {
+                        primary: "bg-orange-400",
+                        secondary: "bg-orange-50",
+                        border: "border-orange-200",
+                        text: "text-orange-600",
+                        accent: "#fb923c",
+                        title: "나의 성장 기록지 🍎"
+                    } : {
+                        primary: "bg-indigo-700",
+                        secondary: "bg-indigo-50",
+                        border: "border-indigo-200",
+                        text: "text-indigo-700",
+                        accent: "#4338ca",
+                        title: "학업 성취 분석표"
                     };
 
-                    // 레이더 차트 데이터 준비
-                    const radarCategories = ['L/C', 'Voca', 'Gr', 'R/C', 'Syn', 'SUM'];
+                    // 5과목 데이터 (기본 교과)
+                    const data5 = ['L/C', 'Voca', 'Gr', 'R/C', 'Syn'].map(subject => ({
+                        subject,
+                        score: parseFloat(showReport.scores?.[subject]) || 0,
+                        top30: parseFloat(showReport.scores?.[`${subject}(30%)`]) || 0,
+                        average: parseFloat(showReport.scores?.[`${subject}(av)`]) || 0,
+                        grade: isElementary ? (
+                            parseFloat(showReport.scores?.[subject]) >= parseFloat(showReport.scores?.[`${subject}(30%)`])
+                                ? '매우 잘함' : '잘함'
+                        ) : null
+                    }));
+
+                    // 레이더 차트용 카테고리 (기존 유지)
+                    const radarCategories = ['L/C', 'Voca', 'Gr', 'R/C', 'Syn'];
                     const radarData = {
                         student: radarCategories.map(cat => parseFloat(showReport.scores?.[cat]) || 0),
                         percentile30: radarCategories.map(cat => parseFloat(showReport.scores?.[`${cat}(30%)`]) || 0),
                         average: radarCategories.map(cat => parseFloat(showReport.scores?.[`${cat}(av)`]) || 0)
                     };
 
-                    // 막대 그래프 데이터 준비
+                    // 4과목 데이터 (종합 지표)
+                    const data4 = ['EnglishSense', 'EnglishLogic', 'GPAindex', 'CSATindex'].map(subject => ({
+                        subject: subject.replace('English', 'English ').replace('index', ' Index'),
+                        rawSubject: subject,
+                        score: parseFloat(showReport.scores?.[subject]) || 0,
+                        top30: parseFloat(showReport.scores?.[`${subject}(30%)`]) || 0,
+                        average: parseFloat(showReport.scores?.[`${subject}(av)`]) || 0
+                    }));
+
+                    // 막대 그래프 데이터 (기존 유지)
                     const barCategories = ['EnglishSense', 'EnglishLogic', 'GPAindex', 'CSATindex'];
                     const barData = {
                         student: barCategories.map(cat => parseFloat(showReport.scores?.[cat]) || 0),
                         percentile30: barCategories.map(cat => parseFloat(showReport.scores?.[`${cat}(30%)`]) || 0),
                         average: barCategories.map(cat => parseFloat(showReport.scores?.[`${cat}(av)`]) || 0)
                     };
+
+                    // PDF 출력 핸들러
+                    const handlePrintPDF = () => {
+                        const originalTitle = document.title;
+                        document.title = `${showReport.name}_성적표`;
+                        window.print();
+                        setTimeout(() => { document.title = originalTitle; }, 1000);
+                    };
+
+                    // AI 분석 생성
+                    const generateAIAnalysis = () => {
+                        const avgScore = data5.reduce((sum, d) => sum + d.score, 0) / data5.length;
+                        const strongestSubject = data5.reduce((max, d) => d.score > max.score ? d : max);
+                        const weakestSubject = data5.reduce((min, d) => d.score < min.score ? d : min);
+                        return {
+                            overall: avgScore >= 20 ? "우수" : avgScore >= 15 ? "양호" : "보통",
+                            strength: strongestSubject.subject,
+                            weakness: weakestSubject.subject,
+                            recommendation: avgScore >= 20
+                                ? `${weakestSubject.subject} 영역의 추가 학습을 통해 더욱 균형 잡힌 실력을 갖출 수 있습니다.`
+                                : `기본기 강화를 위한 ${weakestSubject.subject} 집중 학습을 권장합니다.`
+                        };
+                    };
+
+                    const aiAnalysis = generateAIAnalysis();
 
                     // 레이더 차트 SVG 생성 함수
                     const createRadarChart = () => {
@@ -1304,7 +1363,7 @@ const App = () => {
 
                     return (
                         <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm overflow-auto">
-                            <div className={cn("w-full max-w-[210mm] min-h-[297mm] rounded-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 my-8 print:my-0 print:shadow-none print:rounded-none", deptStyles[dept_type] || deptStyles['중등부'])}>
+                            <div className="w-full max-w-[210mm] min-h-[297mm] bg-slate-200 rounded-lg shadow-2xl overflow-hidden my-8 print:my-0 print:shadow-none print:rounded-none print:bg-white">
                                 {/* 화면 전용 닫기 버튼 */}
                                 <div className="print:hidden absolute top-4 right-4 z-10">
                                     <button onClick={() => setShowReport(null)} className="p-3 bg-white rounded-full shadow-lg hover:bg-slate-100 transition-all">
@@ -1312,82 +1371,178 @@ const App = () => {
                                     </button>
                                 </div>
 
-                                {/* A4 페이지 컨테이너 */}
-                                <div className="p-12 space-y-8">
-                                    {/* 학생 개인정보 */}
-                                    <div className="text-center space-y-4 pb-8 border-b-4 border-blue-600">
-                                        <h1 className="text-4xl font-black text-slate-900 tracking-tight">성적표</h1>
-                                        <div className="grid grid-cols-4 gap-4 max-w-3xl mx-auto mt-6">
-                                            <div className="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-slate-200">
-                                                <div className="text-[10px] text-slate-500 font-black mb-1">이름</div>
-                                                <div className="text-lg font-black text-slate-900">{showReport.name}</div>
+                                {/* A4 컨테이너 */}
+                                <div className="bg-white mx-auto shadow-2xl print:shadow-none" style={{ width: '210mm', minHeight: '297mm', padding: '15mm' }}>
+
+                                    {/* 헤더 */}
+                                    <div className={`border-b-4 ${theme.border} pb-6 mb-8 flex justify-between items-center`}>
+                                        <div>
+                                            <h1 className={`text-3xl font-black ${theme.text}`}>{theme.title}</h1>
+                                            <p className="text-slate-500 text-sm mt-1">{showReport.school} | {showReport.date || new Date().toLocaleDateString('ko-KR')}</p>
+                                        </div>
+                                        <School className={`${theme.text}`} size={48} />
+                                    </div>
+
+                                    {/* 학생 정보 */}
+                                    <div className={`grid grid-cols-4 gap-4 mb-8 p-4 rounded-2xl ${theme.secondary} border ${theme.border}`}>
+                                        <div className="col-span-1 bg-white rounded-xl flex items-center justify-center border border-slate-200 h-32">
+                                            <User size={48} className="text-slate-300" />
+                                        </div>
+                                        <div className="col-span-3 grid grid-cols-2 gap-4 h-full content-center">
+                                            <div className="flex justify-between border-b border-slate-300 py-1 px-2">
+                                                <span className="text-xs font-bold text-slate-500">성명</span>
+                                                <span className="text-sm font-black">{showReport.name}</span>
                                             </div>
-                                            <div className="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-slate-200">
-                                                <div className="text-[10px] text-slate-500 font-black mb-1">학교학년</div>
-                                                <div className="text-lg font-black text-slate-900">{showReport.school} {showReport.grade}</div>
+                                            <div className="flex justify-between border-b border-slate-300 py-1 px-2">
+                                                <span className="text-xs font-bold text-slate-500">학년</span>
+                                                <span className="text-sm font-black">{showReport.grade}</span>
                                             </div>
-                                            <div className="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-slate-200">
-                                                <div className="text-[10px] text-slate-500 font-black mb-1">응시일</div>
-                                                <div className="text-lg font-black text-slate-900">{showReport.date}</div>
-                                            </div>
-                                            <div className="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-slate-200">
-                                                <div className="text-[10px] text-slate-500 font-black mb-1">시험종류</div>
-                                                <div className="text-lg font-black text-slate-900">{showReport.type}</div>
+                                            <div className="col-span-2 flex justify-between border-b border-slate-300 py-1 px-2">
+                                                <span className="text-xs font-bold text-slate-500">종합 의견</span>
+                                                <span className="text-xs font-medium text-slate-600">
+                                                    {isElementary ? '교우 관계가 원만하고 모든 활동에 즐겁게 참여합니다.' : '학업 성취도가 높으며 특히 수리 분석 능력이 우수함.'}
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
 
-                                    {/* 2단 그리드: 성적테이블 + 레이더차트 */}
-                                    <div className="grid grid-cols-2 gap-8">
-                                        {/* 좌측: 성적테이블 */}
-                                        <div className="bg-white/70 backdrop-blur-sm p-6 rounded-2xl border border-slate-200">
-                                            <h3 className="text-sm font-black text-slate-700 mb-4 uppercase tracking-wider">과목별 성적</h3>
-                                            <div className="space-y-2">
-                                                {radarCategories.map(cat => (
-                                                    <div key={cat} className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
-                                                        <span className="text-xs font-black text-slate-600">{cat}</span>
-                                                        <span className="text-lg font-black text-slate-900">{showReport.scores?.[cat] || 0}</span>
+                                    {/* 기본 교과 분석 (5과목) */}
+                                    <div className="mb-10">
+                                        <div className={`flex items-center gap-2 mb-4 ${theme.text}`}>
+                                            <BookOpen size={20} />
+                                            <h2 className="text-lg font-bold">기본 교과 분석 (5과목)</h2>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-6 h-64">
+                                            <div className="h-full border border-slate-100 rounded-xl p-2 flex items-center justify-center">
+                                                {createRadarChart()}
+                                            </div>
+
+                                            <table className="text-xs w-full h-fit border-collapse">
+                                                <thead>
+                                                    <tr className={`${theme.primary} text-white`}>
+                                                        <th className="p-2 border border-slate-200">과목</th>
+                                                        <th className="p-2 border border-slate-200">{isElementary ? '성취도' : '점수'}</th>
+                                                        <th className="p-2 border border-slate-200">상위 30%</th>
+                                                        <th className="p-2 border border-slate-200">평균</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {data5.map((item, i) => (
+                                                        <tr key={i} className="text-center">
+                                                            <td className="p-2 border border-slate-200 font-bold bg-slate-50">{item.subject}</td>
+                                                            <td className={`p-2 border border-slate-200 font-bold ${item.score >= item.top30 ? 'text-green-600' : ''}`}>
+                                                                {isElementary ? item.grade : item.score}
+                                                            </td>
+                                                            <td className="p-2 border border-slate-200 text-slate-500">{item.top30}</td>
+                                                            <td className="p-2 border border-slate-200 text-slate-500">{item.average}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                    {/* 2열 레이아웃: 종합 지표 + AI 분석 */}
+                                    <div className="grid grid-cols-3 gap-6 mb-10">
+                                        {/* 종합 지표 분석 (2/3) */}
+                                        <div className="col-span-2">
+                                            <div className={`flex items-center gap-2 mb-4 ${theme.text}`}>
+                                                <Award size={20} />
+                                                <h2 className="text-lg font-bold">{isElementary ? '즐거운 생활 분석 (4과목)' : '종합 지표 분석 (4과목)'}</h2>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-4 h-64">
+                                                <table className="text-xs w-full h-fit border-collapse">
+                                                    <thead>
+                                                        <tr className={`${theme.primary} text-white`}>
+                                                            <th className="p-2 border border-slate-200">과목</th>
+                                                            <th className="p-2 border border-slate-200">점수</th>
+                                                            <th className="p-2 border border-slate-200">상위 30%</th>
+                                                            <th className="p-2 border border-slate-200">평균</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {data4.map((item, i) => (
+                                                            <tr key={i} className="text-center">
+                                                                <td className="p-2 border border-slate-200 font-bold bg-slate-50 text-[10px]">{item.subject}</td>
+                                                                <td className="p-2 border border-slate-200 font-bold">{item.score}</td>
+                                                                <td className="p-2 border border-slate-200 text-slate-400">{item.top30}</td>
+                                                                <td className="p-2 border border-slate-200 text-slate-400">{item.average}</td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                                <div className="h-full border border-slate-100 rounded-xl p-2 flex items-center justify-center">
+                                                    {createBarChart()}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* AI 분석 (1/3) */}
+                                        <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl p-6 border-2 border-purple-200">
+                                            <div className="flex items-center gap-2 mb-4 text-purple-700">
+                                                <Database size={18} />
+                                                <h3 className="text-sm font-black">AI 성적 분석</h3>
+                                            </div>
+                                            <div className="space-y-4">
+                                                <div className="bg-white/70 p-3 rounded-xl">
+                                                    <div className="text-[10px] text-slate-500 font-bold mb-1">종합 평가</div>
+                                                    <div className={`text-lg font-black ${aiAnalysis.overall === '우수' ? 'text-green-600' : aiAnalysis.overall === '양호' ? 'text-blue-600' : 'text-slate-600'}`}>
+                                                        {aiAnalysis.overall}
                                                     </div>
-                                                ))}
-                                            </div>
-                                        </div>
-
-                                        {/* 우측: 레이더차트 */}
-                                        <div className="bg-white/70 backdrop-blur-sm p-6 rounded-2xl border border-slate-200">
-                                            <h3 className="text-sm font-black text-slate-700 mb-4 uppercase tracking-wider text-center">성적 분석 차트</h3>
-                                            {createRadarChart()}
-                                            <div className="flex justify-center gap-4 mt-4">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-4 h-4 bg-blue-600 rounded"></div>
-                                                    <span className="text-[10px] font-black text-slate-600">본인</span>
                                                 </div>
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-4 h-4 bg-amber-500 rounded"></div>
-                                                    <span className="text-[10px] font-black text-slate-600">상위30%</span>
+                                                <div className="bg-white/70 p-3 rounded-xl">
+                                                    <div className="text-[10px] text-slate-500 font-bold mb-1">강점 과목</div>
+                                                    <div className="text-base font-black text-green-600">{aiAnalysis.strength}</div>
                                                 </div>
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-4 h-4 bg-slate-400 rounded"></div>
-                                                    <span className="text-[10px] font-black text-slate-600">평균</span>
+                                                <div className="bg-white/70 p-3 rounded-xl">
+                                                    <div className="text-[10px] text-slate-500 font-bold mb-1">보완 필요</div>
+                                                    <div className="text-base font-black text-orange-600">{aiAnalysis.weakness}</div>
+                                                </div>
+                                                <div className="bg-white/70 p-3 rounded-xl">
+                                                    <div className="text-[10px] text-slate-500 font-bold mb-1">학습 제안</div>
+                                                    <div className="text-[11px] text-slate-700 leading-relaxed">{aiAnalysis.recommendation}</div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    {/* 비교 막대 그래프 */}
-                                    <div className="bg-white/70 backdrop-blur-sm p-6 rounded-2xl border border-slate-200">
-                                        <h3 className="text-sm font-black text-slate-700 mb-6 uppercase tracking-wider">종합 지표 비교</h3>
-                                        {createBarChart()}
-                                    </div>
+                                    {/* 푸터 */}
+                                    <div className="mt-auto pt-10 border-t-2 border-slate-100 text-center relative">
+                                        <p className="text-sm font-bold text-slate-700">위 학생의 학업 성취 결과를 정히 통보합니다.</p>
+                                        <p className="text-xs text-slate-400 mt-2">이 문서는 교육용 시스템에 의해 자동 생성되었습니다.</p>
 
-                                    {/* 하단 푸터 */}
-                                    <div className="flex justify-between items-center pt-6 border-t border-slate-200">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase">IMPACT7 Data Service</p>
-                                        <button onClick={() => window.print()} className="print:hidden flex items-center gap-2 bg-blue-600 text-white font-black px-6 py-3 rounded-xl hover:bg-blue-700 shadow-lg transition-all">
-                                            <Printer className="w-4 h-4" /> 인쇄하기
+                                        <div className="mt-8 flex justify-center">
+                                            <div className="relative">
+                                                <p className="text-xl font-black tracking-[10px] text-slate-800">{showReport.school}장</p>
+                                                <div className="absolute -right-12 -top-4 w-16 h-16 border-4 rounded-full flex items-center justify-center border-red-500/50 opacity-60 rotate-12">
+                                                    <span className="text-red-600 text-[10px] font-bold">인 생략</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* 출력 버튼 (화면에만 표시) */}
+                                        <button
+                                            onClick={handlePrintPDF}
+                                            className="print:hidden mt-8 bg-blue-600 text-white px-8 py-3 rounded-2xl font-bold shadow-lg flex items-center gap-3 hover:bg-blue-700 transition-all mx-auto"
+                                        >
+                                            <Printer size={18} /> PDF 저장/인쇄
                                         </button>
                                     </div>
                                 </div>
                             </div>
+
+                            {/* 인쇄 스타일 */}
+                            <style dangerouslySetInnerHTML={{ __html: `
+                                @media print {
+                                    body { background: white !important; padding: 0 !important; }
+                                    @page {
+                                        size: A4;
+                                        margin: 0;
+                                    }
+                                }
+                            `}} />
                         </div>
                     );
                 })()
