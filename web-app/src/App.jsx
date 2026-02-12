@@ -866,6 +866,38 @@ const App = () => {
                                     )}
                                 </div>
 
+                                {/* 과목 헤더 안내 */}
+                                {formData.dept_type && (
+                                    <div className="mt-8 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-100 shadow-inner">
+                                        <div className="flex items-start gap-3">
+                                            <div className="mt-1">
+                                                <LayoutDashboard className="w-5 h-5 text-blue-600" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <h4 className="text-sm font-black text-blue-900 mb-3 uppercase tracking-wider">
+                                                    📋 {formData.dept_type} 과목 헤더
+                                                </h4>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {(formData.dept_type === '고등부'
+                                                        ? ['청해', '대의파악', '문법어휘', '세부사항', '빈칸추론', '간접쓰기']
+                                                        : ['L/C', 'Voca', 'Gr', 'R/C', 'Syn', 'SUM']
+                                                    ).map((subject, idx) => (
+                                                        <span
+                                                            key={idx}
+                                                            className="px-4 py-2 bg-white text-blue-700 rounded-xl text-xs font-black border border-blue-200 shadow-sm"
+                                                        >
+                                                            {subject}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                                <p className="text-xs text-blue-600 font-semibold mt-3">
+                                                    ✓ 모든 값이 스프레드시트에서 직접 읽어옵니다
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
                             </div>
 
                             <div className="flex justify-end pt-6">
