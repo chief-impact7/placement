@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - master
+      - 'claude/**'
     paths:
       - 'web-app/**'
       - '.github/workflows/firebase-deploy.yml'
