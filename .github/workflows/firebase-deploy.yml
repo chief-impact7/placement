@@ -26,6 +26,13 @@ jobs:
           cd web-app
           npm ci
 
+      - name: Create .env file
+        run: |
+          cd web-app
+          echo "VITE_GOOGLE_API_KEY=${{ secrets.VITE_GOOGLE_API_KEY }}" >> .env
+          echo "VITE_GOOGLE_CLIENT_ID=${{ secrets.VITE_GOOGLE_CLIENT_ID }}" >> .env
+          echo "VITE_SPREADSHEET_ID=${{ secrets.VITE_SPREADSHEET_ID }}" >> .env
+
       - name: Build
         run: |
           cd web-app
