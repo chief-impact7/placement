@@ -884,13 +884,12 @@ const App = () => {
                                                     ).map((subject, idx) => {
                                                         const scoreValue = formData.scores?.[subject] || '-';
                                                         return (
-                                                            <div
+                                                            <span
                                                                 key={idx}
-                                                                className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl border border-blue-200 shadow-sm"
+                                                                className="px-4 py-2 bg-white text-blue-700 rounded-xl text-sm font-black border border-blue-200 shadow-sm"
                                                             >
-                                                                <span className="text-xs font-black text-blue-600">{subject}</span>
-                                                                <span className="text-sm font-black text-blue-900">{scoreValue}</span>
-                                                            </div>
+                                                                {subject} ({scoreValue})
+                                                            </span>
                                                         );
                                                     })}
                                                 </div>
