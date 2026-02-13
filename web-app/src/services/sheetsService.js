@@ -16,26 +16,41 @@ class SheetsService {
 
     // GAPI 라이브러리 로드
     async initGapi(apiKey) {
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
+            if (!window.gapi) {
+                console.error('window.gapi 객체를 찾을 수 없습니다.');
+                return reject(new Error('GAPI script not loaded'));
+            }
             window.gapi.load('client', async () => {
-                await window.gapi.client.init({
-                    apiKey: apiKey,
-                    discoveryDocs: [DISCOVERY_DOC],
-                });
-                this.gapiInited = true;
-                resolve();
+                try {
+                    await window.gapi.client.init({
+                        apiKey: apiKey,
+                        discoveryDocs: [DISCOVERY_DOC],
+                    });
+                    this.gapiInited = true;
+                    console.log('GAPI client initialized successfully');
+                    resolve();
+                } catch (error) {
+                    console.error('GAPI client init failed:', error);
+                    reject(error);
+                }
             });
         });
     }
 
     // GIS 라이브러리 로드 (인증)
     initGis(clientId) {
+        if (!window.google || !window.google.accounts) {
+            console.error('window.google.accounts 객체를 찾을 수 없습니다.');
+            return;
+        }
         this.tokenClient = window.google.accounts.oauth2.initTokenClient({
             client_id: clientId,
             scope: SCOPES,
             callback: '',
         });
         this.gisInited = true;
+        console.log('GIS token client initialized successfully');
     }
 
     // 사용자 이메일 정보 가져오기
@@ -128,17 +143,23 @@ class SheetsService {
             }
 
             // 성적 필드 추가 (동적)
-            for (const [key, val] of Object.entries(data.scores)) {
+            const scores = data.scores || {};
+            console.log('[submitGradeData] 전송할 성적 데이터:', scores);
+            for (const [key, val] of Object.entries(scores)) {
                 const idx = this.findHeaderIndex(headerRow, key);
+                console.log(`[Field Matching] Key: "${key}", Value: "${val}", Found Index: ${idx}`);
                 if (idx !== -1) {
-                    if (val !== undefined) {
+                    if (val !== undefined && val !== null) {
                         updates.push({
                             range: `'${sheetName}'!${this.getColLetter(idx)}${targetRow}`,
                             values: [[val]]
                         });
                     }
+                } else {
+                    console.warn(`[Field Missing] 시트 헤더에 "${key}" 필드가 없습니다.`);
                 }
             }
+            console.log('[submitGradeData] 최종 생성된 업데이트 목록:', updates);
 
             await window.gapi.client.sheets.spreadsheets.values.batchUpdate({
                 spreadsheetId: spreadsheetId,
@@ -151,7 +172,8 @@ class SheetsService {
             return { status: "SUCCESS", message: `${targetRow}행에 데이터가 저장되었습니다.` };
         } catch (err) {
             console.error('Data submit error:', err);
-            return { status: "ERROR", message: err.message };
+            const errorMsg = err.result?.error?.message || err.message || JSON.stringify(err);
+            return { status: "ERROR", message: errorMsg };
         }
     }
 
@@ -519,7 +541,8 @@ class SheetsService {
             return { status: "SUCCESS", message: "시트 이름이 변경되었습니다." };
         } catch (err) {
             console.error('Rename sheet error:', err);
-            return { status: "ERROR", message: err.message };
+            const errorMessage = err.result?.error?.message || err.message || '알 수 없는 오류가 발생했습니다.';
+            return { status: "ERROR", message: errorMessage };
         }
     }
 
@@ -532,15 +555,17 @@ class SheetsService {
         return code;
     }
 
-    // 헤더 이름을 표준화하여 비교 (공백 제거, 소문자화)
+    // 헤더 이름을 표준화하여 비교 (공백, 특수문자 제거, 소문자화)
     normalize(str) {
-        return str ? str.toString().trim().toLowerCase().replace(/\s+/g, '') : '';
+        if (!str) return '';
+        // 공백, 괄호, 대시, 언더바 등을 모두 제거하고 소문자로 변환
+        return str.toString().toLowerCase().replace(/[\s\(\)\-_\/]/g, '');
     }
 
     findHeaderIndex(headerRow, targetName) {
-        const normalizedTarget = this.normalize(targetName);
-        // 정확히 일치하는 헤더 찾기 (엄격 매칭)
-        return headerRow.findIndex(h => this.normalize(h) === normalizedTarget);
+        if (!headerRow) return -1;
+        const normTarget = this.normalize(targetName);
+        return headerRow.findIndex(h => this.normalize(h) === normTarget);
     }
 }
 

@@ -24,19 +24,19 @@ const getLocalTodayStr = () => {
 // 학부별 과목 구성 및 점수 제한 (최대값)
 const DEPT_SPECS = {
     '초등부': {
-        fields: ['L/C (Raw)', 'Voca (Raw)', 'Gr (Raw)', 'R/C (Raw)', 'Syn (Raw)', '개별보정 (Raw)'],
-        limits: { 'L/C (Raw)': 20, 'Voca (Raw)': 15, 'Gr (Raw)': 15, 'R/C (Raw)': 15, 'Syn (Raw)': 25, '개별보정 (Raw)': 100 },
-        units: { 'L/C (Raw)': '개', 'Voca (Raw)': '개', 'Gr (Raw)': '개', 'R/C (Raw)': '개', 'Syn (Raw)': '점', '개별보정 (Raw)': '포인트' }
+        fields: ['L/C(Raw)', 'Voca(Raw)', 'Gr(Raw)', 'R/C(Raw)', 'Syn(Raw)', '개별보정(Raw)'],
+        limits: { 'L/C(Raw)': 20, 'Voca(Raw)': 15, 'Gr(Raw)': 15, 'R/C(Raw)': 15, 'Syn(Raw)': 25, '개별보정(Raw)': 100 },
+        units: { 'L/C(Raw)': '개', 'Voca(Raw)': '개', 'Gr(Raw)': '개', 'R/C(Raw)': '개', 'Syn(Raw)': '점', '개별보정(Raw)': '포인트' }
     },
     '중등부': {
-        fields: ['L/C (Raw)', 'Voca (Raw)', 'Gr (Raw)', 'R/C (Raw)', 'Syn (Raw)', '개별보정 (Raw)'],
-        limits: { 'L/C (Raw)': 20, 'Voca (Raw)': 20, 'Gr (Raw)': 20, 'R/C (Raw)': 20, 'Syn (Raw)': 25, '개별보정 (Raw)': 100 },
-        units: { 'L/C (Raw)': '개', 'Voca (Raw)': '개', 'Gr (Raw)': '개', 'R/C (Raw)': '개', 'Syn (Raw)': '점', '개별보정 (Raw)': '포인트' }
+        fields: ['L/C(Raw)', 'Voca(Raw)', 'Gr(Raw)', 'R/C(Raw)', 'Syn(Raw)', '개별보정(Raw)'],
+        limits: { 'L/C(Raw)': 20, 'Voca(Raw)': 20, 'Gr(Raw)': 20, 'R/C(Raw)': 20, 'Syn(Raw)': 25, '개별보정(Raw)': 100 },
+        units: { 'L/C(Raw)': '개', 'Voca(Raw)': '개', 'Gr(Raw)': '개', 'R/C(Raw)': '개', 'Syn(Raw)': '점', '개별보정(Raw)': '포인트' }
     },
     '고등부': {
-        fields: ['청해 (Raw)', '대의파악 (Raw)', '문법어휘 (Raw)', '세부사항 (Raw)', '빈칸추론 (Raw)', '간접쓰기 (Raw)'],
-        limits: { '청해 (Raw)': 10, '대의파악 (Raw)': 5, '문법어휘 (Raw)': 10, '세부사항 (Raw)': 5, '빈칸추론 (Raw)': 10, '간접쓰기 (Raw)': 10 },
-        units: { '청해 (Raw)': '개', '대의파악 (Raw)': '개', '문법어휘 (Raw)': '개', '세부사항 (Raw)': '개', '빈칸추론 (Raw)': '개', '간접쓰기 (Raw)': '개' }
+        fields: ['청해(Raw)', '대의파악(Raw)', '문법어휘(Raw)', '세부사항(Raw)', '빈칸추론(Raw)', '간접쓰기(Raw)'],
+        limits: { '청해(Raw)': 10, '대의파악(Raw)': 5, '문법어휘(Raw)': 10, '세부사항(Raw)': 5, '빈칸추론(Raw)': 10, '간접쓰기(Raw)': 10 },
+        units: { '청해(Raw)': '개', '대의파악(Raw)': '개', '문법어휘(Raw)': '개', '세부사항(Raw)': '개', '빈칸추론(Raw)': '개', '간접쓰기(Raw)': '개' }
     }
 };
 
@@ -76,6 +76,9 @@ const App = () => {
     const ITEMS_PER_PAGE = 10;
 
 
+    const [isApiLoaded, setIsApiLoaded] = useState(false);
+    const [isApiInitializing, setIsApiInitializing] = useState(true);
+
     const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
     const spreadsheetId = import.meta.env.VITE_SPREADSHEET_ID;
@@ -84,34 +87,84 @@ const App = () => {
 
     useEffect(() => {
         const initClient = async () => {
-            if (!apiKey || !clientId) return;
-            try {
-                await sheetsService.initGapi(apiKey);
-                sheetsService.initGis(clientId);
-            } catch (err) { console.error('Init error:', err); }
+            console.log('API 초기화 시도 중...', { apiKey: !!apiKey, clientId: !!clientId });
+
+            if (!apiKey || !clientId) {
+                console.error('환경 변수가 누락되었습니다. VITE_GOOGLE_API_KEY 및 VITE_GOOGLE_CLIENT_ID를 확인해주세요.');
+                setIsApiInitializing(false);
+                return;
+            }
+
+            let retryCount = 0;
+            const maxRetries = 10;
+
+            const attemptInit = async () => {
+                try {
+                    console.log(`API 스크립트 로딩 대기 중... (시도: ${retryCount + 1}/${maxRetries})`);
+
+                    if (!window.gapi || !window.google) {
+                        if (retryCount < maxRetries) {
+                            retryCount++;
+                            setTimeout(attemptInit, 800);
+                            return;
+                        }
+                        throw new Error('Google API 스크립트(api.js, gsi/client)가 윈도우 객체에 존재하지 않습니다.');
+                    }
+
+                    console.log('GAPI 초기화 시작...');
+                    await sheetsService.initGapi(apiKey);
+                    console.log('GIS 초기화 시작...');
+                    sheetsService.initGis(clientId);
+
+                    console.log('API 초기화 완료!');
+                    setIsApiLoaded(true);
+                } catch (err) {
+                    console.error('API 상세 초기화 오류:', err);
+                    // 앱 전역에서 오류를 알 수 있도록 상태 업데이트 가능
+                } finally {
+                    setIsApiInitializing(false);
+                }
+            };
+
+            attemptInit();
         };
         initClient();
     }, [apiKey, clientId]);
 
     const handleLogin = () => {
-        if (!sheetsService.tokenClient) return alert('API가 아직 로드되지 않았습니다.');
+        if (!isApiLoaded || !sheetsService.tokenClient) {
+            return alert('Google API가 아직 초기화 중입니다. 잠시 후 다시 시도해주세요.');
+        }
+
+        setIsLoading(true);
         sheetsService.tokenClient.callback = async (resp) => {
-            if (resp.error !== undefined) throw resp;
-
-            // 도메인 검증 로직
-            const userInfo = await sheetsService.getUserInfo();
-            const userEmail = userInfo?.email || '';
-            const allowedDomains = ['@gw.impact7.kr', '@impact7.kr'];
-            const isAllowed = allowedDomains.some(domain => userEmail.endsWith(domain));
-
-            if (!isAllowed) {
-                alert(`로그인 실패: ${userEmail}\n학원 공식 계정(@impact7.kr 또는 @gw.impact7.kr)으로만 이용 가능합니다.`);
-                window.google.accounts.oauth2.revoke(resp.access_token);
-                return;
+            if (resp.error !== undefined) {
+                setIsLoading(false);
+                throw resp;
             }
 
-            setIsAuthenticated(true);
-            await loadSheetNames();
+            try {
+                // 도메인 검증 로직
+                const userInfo = await sheetsService.getUserInfo();
+                const userEmail = userInfo?.email || '';
+                const allowedDomains = ['@gw.impact7.kr', '@impact7.kr'];
+                const isAllowed = allowedDomains.some(domain => userEmail.endsWith(domain));
+
+                if (!isAllowed) {
+                    alert(`로그인 실패: ${userEmail}\n학원 공식 계정(@impact7.kr 또는 @gw.impact7.kr)으로만 이용 가능합니다.`);
+                    window.google.accounts.oauth2.revoke(resp.access_token);
+                    setIsLoading(false);
+                    return;
+                }
+
+                setIsAuthenticated(true);
+                await loadSheetNames();
+            } catch (error) {
+                console.error('Login Process Error:', error);
+                alert('로그인 처리 중 오류가 발생했습니다.');
+            } finally {
+                setIsLoading(false);
+            }
         };
         sheetsService.tokenClient.requestAccessToken({ prompt: 'consent' });
     };
@@ -334,19 +387,23 @@ const App = () => {
 
         setIsLoading(true);
         try {
+            // scores 객체가 없는 경우 빈 객체로 초기화
+            const scoresData = formData.scores || {};
+
             // 수식 영역 보호를 위해 현재 학부의 입력 필드만 추출하여 저장 시도
             const currentFields = DEPT_SPECS[formData.dept_type]?.fields || [];
             const filteredScores = {};
+
             currentFields.forEach(f => {
-                if (formData.scores[f] !== undefined) {
-                    filteredScores[f] = formData.scores[f];
+                if (scoresData[f] !== undefined) {
+                    filteredScores[f] = scoresData[f];
                 }
             });
 
             // 개별보정 필드 기본값 0 처리 (초등부/중등부)
             if (['초등부', '중등부'].includes(formData.dept_type)) {
-                if (!filteredScores['개별보정 (Raw)']) {
-                    filteredScores['개별보정 (Raw)'] = '0';
+                if (!filteredScores['개별보정(Raw)']) {
+                    filteredScores['개별보정(Raw)'] = '0';
                 }
             }
 
@@ -364,7 +421,8 @@ const App = () => {
                 alert(editingId ? '수정되었습니다.' : '저장되었습니다.');
 
                 // 저장된 최종 합계를 상단 위젯에 동기화 (Google Sheets SUM 사용)
-                const finalSum = parseFloat(cleanData.scores['SUM']) || 0;
+                // scoresData['SUM']이 없을 경우를 대비해 안전하게 접근
+                const finalSum = parseFloat(scoresData['SUM']) || 0;
                 setRefScores(prev => {
                     const next = [...prev];
                     next[3] = finalSum;
@@ -374,9 +432,13 @@ const App = () => {
                 resetForm();
                 await loadStudentData(activeTab);
             } else {
-                alert('실패: ' + (res.message || '알 수 없는 오류가 발생했습니다.'));
+                console.error('Submit Grade Failed:', res);
+                alert('저장 실패: ' + (res.message || '알 수 없는 오류가 발생했습니다.'));
             }
-        } catch (e) { alert('오류: ' + e.message); }
+        } catch (e) {
+            console.error('Submit Grade Error:', e);
+            alert('오류: ' + e.message);
+        }
         finally { setIsLoading(false); }
     };
 
@@ -558,16 +620,37 @@ const App = () => {
 
     if (!isAuthenticated) {
         return (
-            <div className="flex flex-col items-center justify-center h-screen bg-slate-50">
-                <div className="p-12 bg-white border border-slate-200 rounded-3xl shadow-2xl max-w-sm w-full text-center">
-                    <div className="w-20 h-20 bg-blue-600 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-xl shadow-blue-100 rotate-6">
-                        <User className="w-10 h-10 text-white" />
+            <div className="flex flex-col items-center justify-center min-h-screen bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-100 via-slate-50 to-indigo-100 p-6">
+                <div className="max-w-md w-full animate-in fade-in zoom-in duration-700">
+                    <div className="bg-white/80 backdrop-blur-2xl p-12 rounded-[3.5rem] shadow-[0_32px_64px_-16px_rgba(30,58,138,0.25)] border border-white/50 text-center relative overflow-hidden group">
+                        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600"></div>
+                        <div className="mb-10 inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl shadow-xl transform group-hover:rotate-6 transition-transform duration-500">
+                            <GraduationCap className="w-12 h-12 text-white" />
+                        </div>
+                        <h1 className="text-4xl font-black text-slate-900 mb-4 tracking-tighter">IMPACT7 ADMIN</h1>
+                        <p className="text-slate-500 mb-10 font-bold text-sm uppercase tracking-widest px-4 leading-relaxed">
+                            성적 관리 및 리포트 시스템<br />
+                            <span className="text-[10px] text-blue-600/60 mt-2 block">IMPACT7 ENGLISH ACADEMY</span>
+                        </p>
+                        <button
+                            onClick={handleLogin}
+                            disabled={isApiInitializing || isLoading}
+                            className={cn(
+                                "w-full py-5 px-8 bg-slate-900 text-white rounded-[2rem] font-black text-lg flex items-center justify-center gap-4 hover:bg-blue-600 transition-all shadow-2xl shadow-slate-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed group",
+                                isApiInitializing && "bg-slate-400"
+                            )}
+                        >
+                            {isApiInitializing ? (
+                                <RefreshCcw className="w-6 h-6 animate-spin" />
+                            ) : (
+                                <LogIn className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+                            )}
+                            {isApiInitializing ? '시스템 준비 중...' : '구글 계정으로 로그인하기'}
+                        </button>
+                        <p className="mt-8 text-[11px] text-slate-400 font-bold tracking-tight">
+                            학원 공식 계정(@impact7.kr) 필수
+                        </p>
                     </div>
-                    <h1 className="text-3xl font-black text-slate-900 mb-2 tracking-tighter">IMPACT7</h1>
-                    <p className="text-sm text-slate-400 font-bold mb-10">성적 관리 시스템 통합 대시보드</p>
-                    <button onClick={handleLogin} className="w-full bg-blue-600 text-white font-black py-4 rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-200 flex items-center justify-center gap-3">
-                        관리 권한 로그인
-                    </button>
                 </div>
             </div>
         );
@@ -1164,7 +1247,7 @@ const App = () => {
                     // 학부 유추
                     const dept_type = showReport.dept_type ||
                         (['초4', '초5', '초6'].includes(showReport.grade) ? '초등부' :
-                         ['중1', '중2', '중3'].includes(showReport.grade) ? '중등부' : '고등부');
+                            ['중1', '중2', '중3'].includes(showReport.grade) ? '중등부' : '고등부');
 
                     const isElementary = dept_type === '초등부';
 
@@ -1641,7 +1724,6 @@ const App = () => {
                                                         strokeLinecap="round"
                                                         strokeLinejoin="round"
                                                     />
-
                                                     {/* 데이터 포인트 */}
                                                     {[
                                                         { x: 10, y: 90 },
@@ -1687,7 +1769,8 @@ const App = () => {
                             </div>
 
                             {/* 인쇄 스타일 */}
-                            <style dangerouslySetInnerHTML={{ __html: `
+                            <style dangerouslySetInnerHTML={{
+                                __html: `
                                 @media print {
                                     body { background: white !important; padding: 0 !important; }
                                     @page {
