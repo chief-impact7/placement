@@ -833,81 +833,90 @@ const App = () => {
 
                                 {/* 과목별 점수 및 학기별 점수 */}
                                 {formData.dept_type && (
-                                    <div className="mt-8 flex flex-col lg:flex-row gap-6">
-                                        {/* 왼쪽: 과목별 점수 */}
-                                        <div className="flex-1 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-100 shadow-inner">
-                                            <div className="flex items-start gap-3">
-                                                <div className="mt-1">
-                                                    <LayoutDashboard className="w-5 h-5 text-blue-600" />
-                                                </div>
-                                                <div className="flex-1">
-                                                    <h4 className="text-sm font-black text-blue-900 mb-3 uppercase tracking-wider">
-                                                        📋 {formData.dept_type} 과목별 점수
+                                    <div className="mt-8 p-8 bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-50 rounded-3xl border border-blue-200 shadow-xl">
+                                        <div className="flex flex-col lg:flex-row gap-8">
+                                            {/* 왼쪽: 과목별 점수 */}
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-3 mb-6">
+                                                    <LayoutDashboard className="w-6 h-6 text-blue-600" />
+                                                    <h4 className="text-base font-black text-blue-900 uppercase tracking-wide">
+                                                        {formData.dept_type} 과목별 점수
                                                     </h4>
+                                                </div>
 
-                                                    {/* 윗줄: 비율 표시 (고정 텍스트) */}
-                                                    <div className="flex flex-wrap gap-3 mb-3">
-                                                        {formData.dept_type === '고등부' ? (
-                                                            <>
-                                                                <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">청해 (10)</span>
-                                                                <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">대의파악 (10)</span>
-                                                                <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">문법어휘 (20)</span>
-                                                                <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">세부사항 (5)</span>
-                                                                <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">빈칸추론 (28)</span>
-                                                                <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">간접쓰기 (27)</span>
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">L/C (10)</span>
-                                                                <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">Voca (25)</span>
-                                                                <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">Gr (25)</span>
-                                                                <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">R/C (15)</span>
-                                                                <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">Syn (25)</span>
-                                                                <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">SUM</span>
-                                                            </>
-                                                        )}
-                                                    </div>
-
-                                                    {/* 아래줄: 실제 점수 (네모칸) */}
-                                                    <div className="flex flex-wrap gap-3">
-                                                        {(formData.dept_type === '고등부'
-                                                            ? ['청해', '대의파악', '문법어휘', '세부사항', '빈칸추론', '간접쓰기']
-                                                            : ['L/C', 'Voca', 'Gr', 'R/C', 'Syn', 'SUM']
-                                                        ).map((subject, idx) => {
-                                                            const scoreValue = formData.scores?.[subject] || '-';
-                                                            return (
-                                                                <div
-                                                                    key={idx}
-                                                                    className="px-4 py-2 bg-white text-blue-900 rounded-lg text-base font-black border-2 border-blue-300 shadow-sm min-w-[60px] text-center"
-                                                                >
+                                                {/* 과목 그리드 - 헤더와 점수 박스를 같은 컬럼에 정렬 */}
+                                                <div className="grid grid-cols-3 lg:grid-cols-6 gap-4">
+                                                    {(formData.dept_type === '고등부'
+                                                        ? [
+                                                            { label: '청해', max: 10 },
+                                                            { label: '대의파악', max: 10 },
+                                                            { label: '문법어휘', max: 20 },
+                                                            { label: '세부사항', max: 5 },
+                                                            { label: '빈칸추론', max: 28 },
+                                                            { label: '간접쓰기', max: 27 }
+                                                        ]
+                                                        : [
+                                                            { label: 'L/C', max: 10 },
+                                                            { label: 'Voca', max: 25 },
+                                                            { label: 'Gr', max: 25 },
+                                                            { label: 'R/C', max: 15 },
+                                                            { label: 'Syn', max: 25 },
+                                                            { label: 'SUM', max: null }
+                                                        ]
+                                                    ).map((subject, idx) => {
+                                                        const scoreValue = formData.scores?.[subject.label] || '-';
+                                                        return (
+                                                            <div key={idx} className="flex flex-col items-center">
+                                                                {/* 헤더 */}
+                                                                <div className="text-[11px] font-black text-blue-600 mb-2 text-center h-7 flex items-center justify-center">
+                                                                    <span>{subject.label}</span>
+                                                                    {subject.max && <span className="text-slate-400 ml-1">({subject.max})</span>}
+                                                                </div>
+                                                                {/* 점수 박스 */}
+                                                                <div className="w-full px-3 py-3 bg-white text-blue-900 rounded-xl text-lg font-black border-2 border-blue-200 shadow-md hover:shadow-lg transition-shadow text-center">
                                                                     {scoreValue}
                                                                 </div>
-                                                            );
-                                                        })}
-                                                    </div>
-
-                                                    <p className="text-xs text-blue-600 font-semibold mt-3">
-                                                        ✓ 모든 값이 스프레드시트에서 직접 읽어옵니다
-                                                    </p>
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
                                             </div>
-                                        </div>
 
-                                        {/* 우측: 과거 및 현재 성적 대조 UI */}
-                                        <div className="flex flex-wrap gap-4 p-4 bg-slate-50 rounded-[1.5rem] border border-slate-200 shadow-inner lg:min-w-[480px]">
-                                            {[
-                                                { label: '3학기 전', value: formData.scores?.['3학기전SUM'] || '-', color: 'text-slate-400' },
-                                                { label: '2학기 전', value: formData.scores?.['2학기전SUM'] || '-', color: 'text-slate-400' },
-                                                { label: '1학기 전', value: formData.scores?.['1학기전SUM'] || '-', color: 'text-slate-500' },
-                                                { label: '이번 현재 합계', value: formData.scores?.['SUM'] || '-', color: 'text-blue-600 font-black' }
-                                            ].map((item, i) => (
-                                                <div key={i} className="flex flex-col items-center px-6 py-2 bg-white rounded-xl shadow-sm border border-slate-100 min-w-[100px]">
-                                                    <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1">{item.label}</span>
-                                                    <span className={cn("text-lg font-black", item.color)}>
-                                                        {item.value}
-                                                    </span>
+                                            {/* 세로 구분선 */}
+                                            <div className="hidden lg:block w-px bg-gradient-to-b from-transparent via-blue-300 to-transparent"></div>
+
+                                            {/* 오른쪽: 학기별 점수 */}
+                                            <div className="lg:w-[380px]">
+                                                <h4 className="text-base font-black text-blue-900 uppercase tracking-wide mb-6">
+                                                    이전 학기 점수
+                                                </h4>
+
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    {[
+                                                        { label: '3학기 전', value: formData.scores?.['3학기전SUM'] || '-' },
+                                                        { label: '2학기 전', value: formData.scores?.['2학기전SUM'] || '-' },
+                                                        { label: '1학기 전', value: formData.scores?.['1학기전SUM'] || '-' },
+                                                        { label: '이번 현재', value: formData.scores?.['SUM'] || '-' }
+                                                    ].map((item, i) => (
+                                                        <div key={i} className="flex flex-col">
+                                                            {/* 라벨을 박스 밖으로 */}
+                                                            <div className="text-[11px] font-black text-slate-600 uppercase tracking-wider mb-2 text-center">
+                                                                {item.label}
+                                                            </div>
+                                                            {/* 점수만 박스에 크게 표시 */}
+                                                            <div className={cn(
+                                                                "py-5 bg-white rounded-xl shadow-md border-2 text-center hover:shadow-lg transition-shadow",
+                                                                i === 3 ? "border-blue-500" : "border-slate-200"
+                                                            )}>
+                                                                <span className={cn(
+                                                                    "text-3xl font-black",
+                                                                    i === 3 ? "text-blue-600" : "text-slate-700"
+                                                                )}>{item.value}</span>
+                                                            </div>
+                                                        </div>
+                                                    ))}
                                                 </div>
-                                            ))}
+                                            </div>
                                         </div>
                                     </div>
                                 )}
