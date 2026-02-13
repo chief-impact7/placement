@@ -845,83 +845,84 @@ const App = () => {
                                     )}
                                 </div>
 
-                                {/* 과목별 점수 표시 */}
+                                {/* 과목별 점수 및 학기별 점수 */}
                                 {formData.dept_type && (
-                                    <div className="mt-8 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-100 shadow-inner">
-                                        <div className="flex items-start gap-3">
-                                            <div className="mt-1">
-                                                <LayoutDashboard className="w-5 h-5 text-blue-600" />
-                                            </div>
-                                            <div className="flex-1">
-                                                <h4 className="text-sm font-black text-blue-900 mb-3 uppercase tracking-wider">
-                                                    📋 {formData.dept_type} 과목별 점수
-                                                </h4>
-
-                                                {/* 윗줄: 비율 표시 (고정 텍스트) */}
-                                                <div className="flex flex-wrap gap-3 mb-3">
-                                                    {formData.dept_type === '고등부' ? (
-                                                        <>
-                                                            <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">청해 (10)</span>
-                                                            <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">대의파악 (10)</span>
-                                                            <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">문법어휘 (20)</span>
-                                                            <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">세부사항 (5)</span>
-                                                            <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">빈칸추론 (28)</span>
-                                                            <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">간접쓰기 (27)</span>
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">L/C (10)</span>
-                                                            <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">Voca (25)</span>
-                                                            <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">Gr (25)</span>
-                                                            <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">R/C (15)</span>
-                                                            <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">Syn (25)</span>
-                                                            <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">SUM</span>
-                                                        </>
-                                                    )}
+                                    <div className="mt-8 flex flex-col lg:flex-row gap-6">
+                                        {/* 왼쪽: 과목별 점수 */}
+                                        <div className="flex-1 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-100 shadow-inner">
+                                            <div className="flex items-start gap-3">
+                                                <div className="mt-1">
+                                                    <LayoutDashboard className="w-5 h-5 text-blue-600" />
                                                 </div>
+                                                <div className="flex-1">
+                                                    <h4 className="text-sm font-black text-blue-900 mb-3 uppercase tracking-wider">
+                                                        📋 {formData.dept_type} 과목별 점수
+                                                    </h4>
 
-                                                {/* 아래줄: 실제 점수 (네모칸) */}
-                                                <div className="flex flex-wrap gap-3">
-                                                    {(formData.dept_type === '고등부'
-                                                        ? ['청해', '대의파악', '문법어휘', '세부사항', '빈칸추론', '간접쓰기']
-                                                        : ['L/C', 'Voca', 'Gr', 'R/C', 'Syn', 'SUM']
-                                                    ).map((subject, idx) => {
-                                                        const scoreValue = formData.scores?.[subject] || '-';
-                                                        return (
-                                                            <div
-                                                                key={idx}
-                                                                className="px-4 py-2 bg-white text-blue-900 rounded-lg text-base font-black border-2 border-blue-300 shadow-sm min-w-[60px] text-center"
-                                                            >
-                                                                {scoreValue}
-                                                            </div>
-                                                        );
-                                                    })}
+                                                    {/* 윗줄: 비율 표시 (고정 텍스트) */}
+                                                    <div className="flex flex-wrap gap-3 mb-3">
+                                                        {formData.dept_type === '고등부' ? (
+                                                            <>
+                                                                <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">청해 (10)</span>
+                                                                <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">대의파악 (10)</span>
+                                                                <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">문법어휘 (20)</span>
+                                                                <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">세부사항 (5)</span>
+                                                                <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">빈칸추론 (28)</span>
+                                                                <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">간접쓰기 (27)</span>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">L/C (10)</span>
+                                                                <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">Voca (25)</span>
+                                                                <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">Gr (25)</span>
+                                                                <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">R/C (15)</span>
+                                                                <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">Syn (25)</span>
+                                                                <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">SUM</span>
+                                                            </>
+                                                        )}
+                                                    </div>
+
+                                                    {/* 아래줄: 실제 점수 (네모칸) */}
+                                                    <div className="flex flex-wrap gap-3">
+                                                        {(formData.dept_type === '고등부'
+                                                            ? ['청해', '대의파악', '문법어휘', '세부사항', '빈칸추론', '간접쓰기']
+                                                            : ['L/C', 'Voca', 'Gr', 'R/C', 'Syn', 'SUM']
+                                                        ).map((subject, idx) => {
+                                                            const scoreValue = formData.scores?.[subject] || '-';
+                                                            return (
+                                                                <div
+                                                                    key={idx}
+                                                                    className="px-4 py-2 bg-white text-blue-900 rounded-lg text-base font-black border-2 border-blue-300 shadow-sm min-w-[60px] text-center"
+                                                                >
+                                                                    {scoreValue}
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+
+                                                    <p className="text-xs text-blue-600 font-semibold mt-3">
+                                                        ✓ 모든 값이 스프레드시트에서 직접 읽어옵니다
+                                                    </p>
                                                 </div>
-
-                                                <p className="text-xs text-blue-600 font-semibold mt-3">
-                                                    ✓ 모든 값이 스프레드시트에서 직접 읽어옵니다
-                                                </p>
                                             </div>
                                         </div>
-                                    </div>
-                                )}
 
-                                {/* 과거 및 현재 성적 대조 UI */}
-                                {formData.dept_type && (
-                                    <div className="mt-6 flex flex-wrap gap-4 p-4 bg-slate-50 rounded-[1.5rem] border border-slate-200 shadow-inner">
-                                        {[
-                                            { label: '3학기 전', value: formData.scores?.['3학기전SUM'] || '-', color: 'text-slate-400' },
-                                            { label: '2학기 전', value: formData.scores?.['2학기전SUM'] || '-', color: 'text-slate-400' },
-                                            { label: '1학기 전', value: formData.scores?.['1학기전SUM'] || '-', color: 'text-slate-500' },
-                                            { label: '이번 현재 합계', value: formData.scores?.['SUM'] || '-', color: 'text-blue-600 font-black' }
-                                        ].map((item, i) => (
-                                            <div key={i} className="flex flex-col items-center px-6 py-2 bg-white rounded-xl shadow-sm border border-slate-100 min-w-[100px]">
-                                                <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1">{item.label}</span>
-                                                <span className={cn("text-lg font-black", item.color)}>
-                                                    {item.value}
-                                                </span>
-                                            </div>
-                                        ))}
+                                        {/* 우측: 과거 및 현재 성적 대조 UI */}
+                                        <div className="flex flex-col gap-4 p-4 bg-slate-50 rounded-[1.5rem] border border-slate-200 shadow-inner lg:min-w-[480px]">
+                                            {[
+                                                { label: '3학기 전', value: formData.scores?.['3학기전SUM'] || '-', color: 'text-slate-400' },
+                                                { label: '2학기 전', value: formData.scores?.['2학기전SUM'] || '-', color: 'text-slate-400' },
+                                                { label: '1학기 전', value: formData.scores?.['1학기전SUM'] || '-', color: 'text-slate-500' },
+                                                { label: '이번 현재 합계', value: formData.scores?.['SUM'] || '-', color: 'text-blue-600 font-black' }
+                                            ].map((item, i) => (
+                                                <div key={i} className="flex flex-col items-center px-6 py-2 bg-white rounded-xl shadow-sm border border-slate-100">
+                                                    <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1">{item.label}</span>
+                                                    <span className={cn("text-lg font-black", item.color)}>
+                                                        {item.value}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                 )}
 
