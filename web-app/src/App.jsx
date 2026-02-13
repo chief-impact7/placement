@@ -162,18 +162,22 @@ const App = () => {
         finally { setIsLoading(false); }
     };
 
-    const loadRefScores = async (studentName) => {
-        if (!studentName || studentName.trim().length === 0) {
+    const loadRefScores = async (formDataObj) => {
+        const { name, school = '', type = '' } = formDataObj || {};
+        if (!name || name.trim().length === 0) {
             setRefScores(['', '', '', '']); // 0,1,2: 과거, 3: 현재
             return;
         }
 
-        const cleanName = studentName.trim();
+        const cleanName = name.trim();
+        const cleanSchool = school ? school.trim() : '';
+        const cleanType = type ? type.trim() : '';
+
         // 1. 과거 기록 로딩
         const scores = await Promise.all(refSheets.map(async (sheet, idx) => {
             if (!sheet) return '';
             // 참조 시트의 'SUM' 열을 가져옴 (해당 학기 점수)
-            let value = await sheetsService.getStudentValue(spreadsheetId, sheet, cleanName, 'SUM');
+            let value = await sheetsService.getStudentValue(spreadsheetId, sheet, cleanName, cleanSchool, cleanType, 'SUM');
             // #REF! 성 시트 오류는 0 또는 '-'로 표시하여 사용자 혼란 방지
             if (value === '#REF!' || !value) return '0';
             return value;
@@ -182,20 +186,20 @@ const App = () => {
         // 2. 현재 시트의 SUM 로딩
         let currentSum = '';
         if (activeTab) {
-            currentSum = await sheetsService.getStudentValue(spreadsheetId, activeTab, cleanName, 'SUM');
+            currentSum = await sheetsService.getStudentValue(spreadsheetId, activeTab, cleanName, cleanSchool, cleanType, 'SUM');
         }
 
         setRefScores([...scores, (currentSum === '#REF!' || !currentSum) ? '0' : currentSum]);
     };
 
 
-    // 학생 이름 입력 시 자동으로 과거 기록 조회 (3글자 이상일 때만)
+    // 학생 이름 입력 시 자동으로 과거 기록 조회 (이름+학교+시험종류 복합키 사용)
     useEffect(() => {
         if (formData.name && formData.name.trim().length >= 2) {
-            const timer = setTimeout(() => loadRefScores(formData.name), 800); // 디바운싱
+            const timer = setTimeout(() => loadRefScores(formData), 800); // 디바운싱
             return () => clearTimeout(timer);
         }
-    }, [formData.name, refSheets, activeTab]);
+    }, [formData.name, formData.school, formData.type, refSheets, activeTab]);
 
     const handleRefSheetChange = async (idx, sheetName) => {
         const newRefs = [...refSheets];
@@ -298,7 +302,10 @@ const App = () => {
         try {
             const pastScores = await Promise.all(refSheets.map(async (sheet) => {
                 if (!sheet) return 0;
-                const val = await sheetsService.getStudentValue(spreadsheetId, sheet, student.name.trim(), 'SUM');
+                const val = await sheetsService.getStudentValue(
+                    spreadsheetId, sheet, student.name.trim(),
+                    student.school || '', student.type || '', 'SUM'
+                );
                 // #REF! 등 숫자가 아닌 경우 0으로 처리하여 그래프 오류 방지
                 const num = parseFloat(val);
                 return isNaN(num) ? 0 : num;

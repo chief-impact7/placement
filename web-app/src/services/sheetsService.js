@@ -291,8 +291,8 @@ class SheetsService {
         }
     }
 
-    // 특정 시트에서 학생 이름으로 특정 항목(lastmark 등) 가져오기
-    async getStudentValue(spreadsheetId, sheetName, studentName, targetHeader) {
+    // 특정 시트에서 학생 이름+학교+시험종류로 특정 항목(lastmark 등) 가져오기
+    async getStudentValue(spreadsheetId, sheetName, studentName, school = '', examType = '', targetHeader) {
         try {
             const response = await window.gapi.client.sheets.spreadsheets.values.get({
                 spreadsheetId: spreadsheetId,
@@ -303,13 +303,23 @@ class SheetsService {
 
             const headerRow = rows[0];
             const nameIdx = this.findHeaderIndex(headerRow, "이름");
+            const schoolIdx = this.findHeaderIndex(headerRow, "학교");
+            const typeIdx = this.findHeaderIndex(headerRow, "시험종류") || this.findHeaderIndex(headerRow, "시험 종류");
             const targetIdx = this.findHeaderIndex(headerRow, targetHeader);
 
             if (nameIdx === -1 || targetIdx === -1) return null;
 
             const targetName = studentName.trim();
-            // 마지막으로 입력된 학생의 데이터를 찾음 (중복 시 최신 데이터 우선)
-            const studentRow = rows.slice(1).reverse().find(row => (row[nameIdx] || '').toString().trim() === targetName);
+            const targetSchool = school ? school.trim() : '';
+            const targetExamType = examType ? examType.trim() : '';
+
+            // 이름 + 학교 + 시험종류 복합키로 검색 (중복 시 최신 데이터 우선)
+            const studentRow = rows.slice(1).reverse().find(row => {
+                const nameMatch = (row[nameIdx] || '').toString().trim() === targetName;
+                const schoolMatch = !targetSchool || (schoolIdx === -1) || (row[schoolIdx] || '').toString().trim() === targetSchool;
+                const typeMatch = !targetExamType || (typeIdx === -1) || (row[typeIdx] || '').toString().trim() === targetExamType;
+                return nameMatch && schoolMatch && typeMatch;
+            });
             return studentRow ? studentRow[targetIdx] : null;
         } catch (err) {
             console.error('Get student value error:', err);
