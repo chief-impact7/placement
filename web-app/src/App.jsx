@@ -299,14 +299,16 @@ const App = () => {
     const fetchTrendData = (student) => {
         if (trendCache[student.id]) return;
 
-        // refScores 재사용 (이미 위에서 불러온 값, 중복 API 호출 방지)
-        // refScores = [과거점수0, 과거점수1, 과거점수2, 현재]
-        const pastScores = refScores.slice(0, 3).map(v => parseFloat(v) || 0);
-        const currentSum = parseFloat(student.scores['SUM']) || 0;
+        // student.scores에서 과거 학기 점수 직접 가져오기 (스프레드시트 컬럼 사용)
+        const pastScores = [
+            parseFloat(student.scores?.['3학기전SUM']) || 0,
+            parseFloat(student.scores?.['2학기전SUM']) || 0,
+            parseFloat(student.scores?.['1학기전SUM']) || 0
+        ];
+        const currentSum = parseFloat(student.scores?.['SUM']) || 0;
 
         // 차트 데이터 순서: 3학기전 -> 2학기전 -> 1학기전 -> 현재
-        const chartData = [...pastScores];
-        chartData.push(currentSum);
+        const chartData = [...pastScores, currentSum];
 
         setTrendCache(prev => ({
             ...prev,
@@ -886,12 +888,12 @@ const App = () => {
                                             <div className="hidden lg:block w-px bg-gradient-to-b from-transparent via-blue-300 to-transparent"></div>
 
                                             {/* 오른쪽: 학기별 점수 */}
-                                            <div className="lg:w-[380px]">
+                                            <div className="flex-1">
                                                 <h4 className="text-base font-black text-blue-900 uppercase tracking-wide mb-6">
                                                     이전 학기 점수
                                                 </h4>
 
-                                                <div className="grid grid-cols-2 gap-4">
+                                                <div className="grid grid-cols-4 gap-3">
                                                     {[
                                                         { label: '3학기 전', value: formData.scores?.['3학기전SUM'] || '-' },
                                                         { label: '2학기 전', value: formData.scores?.['2학기전SUM'] || '-' },
@@ -900,16 +902,16 @@ const App = () => {
                                                     ].map((item, i) => (
                                                         <div key={i} className="flex flex-col">
                                                             {/* 라벨을 박스 밖으로 */}
-                                                            <div className="text-[11px] font-black text-slate-600 uppercase tracking-wider mb-2 text-center">
+                                                            <div className="text-[10px] font-black text-slate-600 uppercase tracking-wide mb-2 text-center">
                                                                 {item.label}
                                                             </div>
                                                             {/* 점수만 박스에 크게 표시 */}
                                                             <div className={cn(
-                                                                "py-5 bg-white rounded-xl shadow-md border-2 text-center hover:shadow-lg transition-shadow",
+                                                                "py-4 bg-white rounded-xl shadow-md border-2 text-center hover:shadow-lg transition-shadow",
                                                                 i === 3 ? "border-blue-500" : "border-slate-200"
                                                             )}>
                                                                 <span className={cn(
-                                                                    "text-3xl font-black",
+                                                                    "text-2xl font-black",
                                                                     i === 3 ? "text-blue-600" : "text-slate-700"
                                                                 )}>{item.value}</span>
                                                             </div>
