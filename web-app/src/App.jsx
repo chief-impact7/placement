@@ -908,14 +908,14 @@ const App = () => {
                                         </div>
 
                                         {/* 우측: 과거 및 현재 성적 대조 UI */}
-                                        <div className="flex flex-col gap-4 p-4 bg-slate-50 rounded-[1.5rem] border border-slate-200 shadow-inner lg:min-w-[480px]">
+                                        <div className="flex flex-wrap gap-4 p-4 bg-slate-50 rounded-[1.5rem] border border-slate-200 shadow-inner lg:min-w-[480px]">
                                             {[
                                                 { label: '3학기 전', value: formData.scores?.['3학기전SUM'] || '-', color: 'text-slate-400' },
                                                 { label: '2학기 전', value: formData.scores?.['2학기전SUM'] || '-', color: 'text-slate-400' },
                                                 { label: '1학기 전', value: formData.scores?.['1학기전SUM'] || '-', color: 'text-slate-500' },
                                                 { label: '이번 현재 합계', value: formData.scores?.['SUM'] || '-', color: 'text-blue-600 font-black' }
                                             ].map((item, i) => (
-                                                <div key={i} className="flex flex-col items-center px-6 py-2 bg-white rounded-xl shadow-sm border border-slate-100">
+                                                <div key={i} className="flex flex-col items-center px-6 py-2 bg-white rounded-xl shadow-sm border border-slate-100 min-w-[100px]">
                                                     <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1">{item.label}</span>
                                                     <span className={cn("text-lg font-black", item.color)}>
                                                         {item.value}
