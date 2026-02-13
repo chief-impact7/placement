@@ -258,21 +258,21 @@ const App = () => {
 
     const [trendCache, setTrendCache] = useState({});
 
-    // Unified Score Calculation Helper
-    const getCalculatedSum = (scores, dept_type) => {
-        if (!scores) return 0;
-        const type = dept_type || formData.dept_type;
-        const specFields = type ? (DEPT_SPECS[type]?.fields || []) : dynamicHeaders;
-
-        return specFields
-            .filter(f => f.toLowerCase().includes('raw') || f.includes('보정'))
-            .reduce((total, f) => {
-                const norm = f.toLowerCase().replace(/\s+/g, '');
-                const key = Object.keys(scores).find(k => k.toLowerCase().replace(/\s+/g, '') === norm);
-                const val = parseFloat(scores[key || f]);
-                return total + (isNaN(val) ? 0 : val);
-            }, 0);
-    };
+    // [DEPRECATED] 점수 계산 로직 제거 - Google Sheets의 SUM 값만 사용
+    // const getCalculatedSum = (scores, dept_type) => {
+    //     if (!scores) return 0;
+    //     const type = dept_type || formData.dept_type;
+    //     const specFields = type ? (DEPT_SPECS[type]?.fields || []) : dynamicHeaders;
+    //
+    //     return specFields
+    //         .filter(f => f.toLowerCase().includes('raw') || f.includes('보정'))
+    //         .reduce((total, f) => {
+    //             const norm = f.toLowerCase().replace(/\s+/g, '');
+    //             const key = Object.keys(scores).find(k => k.toLowerCase().replace(/\s+/g, '') === norm);
+    //             const val = parseFloat(scores[key || f]);
+    //             return total + (isNaN(val) ? 0 : val);
+    //         }, 0);
+    // };
 
     // Completion Check Helper
     const isStudentComplete = (s) => {
@@ -304,7 +304,7 @@ const App = () => {
                 return isNaN(num) ? 0 : num;
             }));
 
-            const currentSum = getCalculatedSum(student.scores, student.dept_type) || parseFloat(student.scores['SUM']) || 0;
+            const currentSum = parseFloat(student.scores['SUM']) || 0;
 
             // 차트 데이터 유효성 및 순서 조정: 3학기전 -> 2학기전 -> 1학기전 -> 현재
             const chartData = [...pastScores].reverse();
@@ -369,8 +369,8 @@ const App = () => {
             if (res.status === 'SUCCESS') {
                 alert(editingId ? '수정되었습니다.' : '저장되었습니다.');
 
-                // 저장된 최종 합계를 상단 위젯에 동기화 (폼 리셋 후에도 유지되도록)
-                const finalSum = getCalculatedSum(cleanData.scores, cleanData.dept_type);
+                // 저장된 최종 합계를 상단 위젯에 동기화 (Google Sheets SUM 사용)
+                const finalSum = parseFloat(cleanData.scores['SUM']) || 0;
                 setRefScores(prev => {
                     const next = [...prev];
                     next[3] = finalSum;
@@ -553,20 +553,14 @@ const App = () => {
         };
     }, [studentList]);
 
-    // 실시간 입력 점수 합계 계산 (현재 폼 데이터 기준)
+    // 실시간 입력 점수 합계 (Google Sheets의 SUM 값만 사용)
     const currentFormSum = useMemo(() => {
-        // 이름이 없으면 폼이 비어있는 것으로 간주하여 null 반환 (상단 위젯에서 refScores[3]으로 폴백 유도)
+        // 이름이 없으면 폼이 비어있는 것으로 간주하여 null 반환
         if (!formData.scores || !formData.name) return null;
 
-        const localSum = getCalculatedSum(formData.scores, formData.dept_type);
-
-        // 만약 아무것도 입력 안 된 상태라면 시트의 SUM 값을 보여줌 (수정 모드 초기 진입 시)
-        if (localSum === 0 && (formData.scores['SUM'] !== undefined && formData.scores['SUM'] !== '')) {
-            return parseFloat(formData.scores['SUM']) || 0;
-        }
-
-        return localSum;
-    }, [formData.scores, formData.dept_type, dynamicHeaders]);
+        // Google Sheets의 SUM 값을 그대로 사용 (계산하지 않음)
+        return parseFloat(formData.scores['SUM']) || 0;
+    }, [formData.scores]);
 
     if (!isAuthenticated) {
         return (
@@ -985,8 +979,8 @@ const App = () => {
                                     </thead>
                                     <tbody className="divide-y divide-slate-50">
                                         {paginatedList.map(s => {
-                                            // UI 일관성을 위해 시트의 'SUM' 대신 로컬 합산 값 표시 (피드백 우선)
-                                            const studentSum = getCalculatedSum(s.scores, s.dept_type) || parseFloat(s.scores['SUM']) || 0;
+                                            // Google Sheets의 SUM 값만 사용
+                                            const studentSum = parseFloat(s.scores['SUM']) || 0;
                                             const isComp = isStudentComplete(s);
 
                                             return (
@@ -1085,7 +1079,7 @@ const App = () => {
 
                                     // Use cached trend data
                                     const cached = trendCache[studentId];
-                                    const currentSum = getCalculatedSum(student.scores, student.dept_type) || parseFloat(student.scores['SUM']) || 0;
+                                    const currentSum = parseFloat(student.scores['SUM']) || 0;
 
                                     // If cached exists, use it. But replace the last element (current) with the latest studentSum
                                     let trendData = cached ? [...cached] : [0, 0, 0, currentSum];
