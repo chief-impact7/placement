@@ -804,30 +804,9 @@ const App = () => {
                             </div>
 
                             <div className="pt-12 border-t-2 border-slate-50">
-                                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
-                                    <div className="flex items-center gap-4">
-                                        <LayoutDashboard className="w-5 h-5 text-slate-400" />
-                                        <label className="text-base font-black text-slate-900 uppercase tracking-[0.2em]">과목별 개수/점수 기록 (SCORE ENTRY)</label>
-                                    </div>
-
-                                    {/* 과거 및 현재 성적 대조 UI - 입력 필드 바로 위 배치 */}
-                                    <div className="flex flex-wrap gap-4 p-4 bg-slate-50 rounded-[1.5rem] border border-slate-200 shadow-inner">
-                                        {[
-                                            { label: '3학기 전', value: refScores[2], color: 'text-slate-400' },
-                                            { label: '2학기 전', value: refScores[1], color: 'text-slate-400' },
-                                            { label: '1학기 전', value: refScores[0], color: 'text-slate-500' },
-                                            { label: '이번 현재 합계', value: (currentFormSum !== null ? currentFormSum : (refScores[3] === '' ? '-' : refScores[3])), color: 'text-blue-600 font-black' }
-                                        ].map((item, i) => (
-                                            <div key={i} className="flex flex-col items-center px-6 py-2 bg-white rounded-xl shadow-sm border border-slate-100 min-w-[100px]">
-                                                <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1">{item.label}</span>
-                                                <span className={cn("text-lg font-black", item.color)}>
-                                                    {item.value || '-'}
-                                                </span>
-                                            </div>
-                                        ))}
-                                    </div>
-
-
+                                <div className="flex items-center gap-4 mb-8">
+                                    <LayoutDashboard className="w-5 h-5 text-slate-400" />
+                                    <label className="text-base font-black text-slate-900 uppercase tracking-[0.2em]">과목별 개수/점수 기록 (SCORE ENTRY)</label>
                                 </div>
 
                                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-6">
@@ -924,6 +903,25 @@ const App = () => {
                                                 </p>
                                             </div>
                                         </div>
+                                    </div>
+                                )}
+
+                                {/* 과거 및 현재 성적 대조 UI */}
+                                {formData.dept_type && (
+                                    <div className="mt-6 flex flex-wrap gap-4 p-4 bg-slate-50 rounded-[1.5rem] border border-slate-200 shadow-inner">
+                                        {[
+                                            { label: '3학기 전', value: formData.scores?.['3학기전SUM'] || '-', color: 'text-slate-400' },
+                                            { label: '2학기 전', value: formData.scores?.['2학기전SUM'] || '-', color: 'text-slate-400' },
+                                            { label: '1학기 전', value: formData.scores?.['1학기전SUM'] || '-', color: 'text-slate-500' },
+                                            { label: '이번 현재 합계', value: formData.scores?.['SUM'] || '-', color: 'text-blue-600 font-black' }
+                                        ].map((item, i) => (
+                                            <div key={i} className="flex flex-col items-center px-6 py-2 bg-white rounded-xl shadow-sm border border-slate-100 min-w-[100px]">
+                                                <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1">{item.label}</span>
+                                                <span className={cn("text-lg font-black", item.color)}>
+                                                    {item.value}
+                                                </span>
+                                            </div>
+                                        ))}
                                     </div>
                                 )}
 
