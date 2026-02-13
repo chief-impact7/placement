@@ -877,6 +877,31 @@ const App = () => {
                                                 <h4 className="text-sm font-black text-blue-900 mb-3 uppercase tracking-wider">
                                                     📋 {formData.dept_type} 과목별 점수
                                                 </h4>
+
+                                                {/* 윗줄: 비율 표시 (고정 텍스트) */}
+                                                <div className="flex flex-wrap gap-3 mb-3">
+                                                    {formData.dept_type === '고등부' ? (
+                                                        <>
+                                                            <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">청해 (10)</span>
+                                                            <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">대의파악 (10)</span>
+                                                            <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">문법어휘 (20)</span>
+                                                            <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">세부사항 (5)</span>
+                                                            <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">빈칸추론 (28)</span>
+                                                            <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">간접쓰기 (27)</span>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">L/C (10)</span>
+                                                            <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">Voca (25)</span>
+                                                            <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">Gr (25)</span>
+                                                            <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">R/C (15)</span>
+                                                            <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">Syn (25)</span>
+                                                            <span className="px-3 py-1.5 bg-white/50 text-blue-600 rounded-lg text-xs font-bold">SUM</span>
+                                                        </>
+                                                    )}
+                                                </div>
+
+                                                {/* 아래줄: 실제 점수 (네모칸) */}
                                                 <div className="flex flex-wrap gap-3">
                                                     {(formData.dept_type === '고등부'
                                                         ? ['청해', '대의파악', '문법어휘', '세부사항', '빈칸추론', '간접쓰기']
@@ -884,15 +909,16 @@ const App = () => {
                                                     ).map((subject, idx) => {
                                                         const scoreValue = formData.scores?.[subject] || '-';
                                                         return (
-                                                            <span
+                                                            <div
                                                                 key={idx}
-                                                                className="px-4 py-2 bg-white text-blue-700 rounded-xl text-sm font-black border border-blue-200 shadow-sm"
+                                                                className="px-4 py-2 bg-white text-blue-900 rounded-lg text-base font-black border-2 border-blue-300 shadow-sm min-w-[60px] text-center"
                                                             >
-                                                                {subject} ({scoreValue})
-                                                            </span>
+                                                                {scoreValue}
+                                                            </div>
                                                         );
                                                     })}
                                                 </div>
+
                                                 <p className="text-xs text-blue-600 font-semibold mt-3">
                                                     ✓ 모든 값이 스프레드시트에서 직접 읽어옵니다
                                                 </p>
