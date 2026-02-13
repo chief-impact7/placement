@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "inputplacement",
     "public": "web-app/dist",
     "ignore": [
       "firebase.json",
