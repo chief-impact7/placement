@@ -263,7 +263,7 @@ class SheetsService {
                     }
                 });
             }
-            return { status: "SUCCESS" };
+            return { status: "SUCCESS", message: "수정되었습니다." };
         } catch (err) {
             console.error('Update row error:', err);
             return { status: "ERROR", message: err.message };
@@ -462,7 +462,7 @@ class SheetsService {
                 spreadsheetId: spreadsheetId,
                 range: `'${sheetName}'!A${rowNumber}:L${rowNumber}`,
             });
-            return { status: "SUCCESS" };
+            return { status: "SUCCESS", message: "삭제되었습니다." };
         } catch (err) {
             console.error('Delete row error:', err);
             return { status: "ERROR", message: err.message };
@@ -487,7 +487,7 @@ class SheetsService {
                     }]
                 }
             });
-            return { status: "SUCCESS" };
+            return { status: "SUCCESS", message: "시트가 삭제되었습니다." };
         } catch (err) {
             console.error('Delete sheet error:', err);
             return { status: "ERROR", message: err.message };
@@ -516,7 +516,7 @@ class SheetsService {
                     }]
                 }
             });
-            return { status: "SUCCESS" };
+            return { status: "SUCCESS", message: "시트 이름이 변경되었습니다." };
         } catch (err) {
             console.error('Rename sheet error:', err);
             return { status: "ERROR", message: err.message };

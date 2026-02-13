@@ -374,7 +374,7 @@ const App = () => {
                 resetForm();
                 await loadStudentData(activeTab);
             } else {
-                alert('실패: ' + res.message);
+                alert('실패: ' + (res.message || '알 수 없는 오류가 발생했습니다.'));
             }
         } catch (e) { alert('오류: ' + e.message); }
         finally { setIsLoading(false); }
@@ -458,7 +458,7 @@ const App = () => {
             const res = await sheetsService.deleteRow(spreadsheetId, activeTab, rowNumber);
             if (res.status === 'SUCCESS') {
                 await loadStudentData(activeTab);
-            } else { alert('삭제 실패: ' + res.message); }
+            } else { alert('삭제 실패: ' + (res.message || '알 수 없는 오류가 발생했습니다.')); }
         } catch (e) { alert('오류: ' + e.message); }
         finally { setIsLoading(false); }
     };
@@ -471,7 +471,7 @@ const App = () => {
             if (res.status === 'SUCCESS') {
                 if (activeTab === sheetName) setActiveTab('');
                 await loadSheetNames();
-            } else { alert('탭 삭제 실패: ' + res.message); }
+            } else { alert('탭 삭제 실패: ' + (res.message || '알 수 없는 오류가 발생했습니다.')); }
         } catch (e) { alert('오류: ' + e.message); }
         finally { setIsLoading(false); }
     };
@@ -491,7 +491,7 @@ const App = () => {
                     await loadStudentData(newTitle);
                 }
                 await loadSheetNames();
-            } else { alert('이름 변경 실패: ' + res.message); }
+            } else { alert('이름 변경 실패: ' + (res.message || '알 수 없는 오류가 발생했습니다.')); }
         } catch (e) { alert('오류: ' + e.message); }
         finally { setIsLoading(false); }
     };
