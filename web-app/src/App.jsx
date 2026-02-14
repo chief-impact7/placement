@@ -1324,6 +1324,7 @@ const App = () => {
             {showReport && (
                 <ReportCard
                     student={showReport}
+                    spreadsheetId={spreadsheetId}
                     onClose={() => setShowReport(null)}
                 />
             )}
