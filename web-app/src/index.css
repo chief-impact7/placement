@@ -1,4 +1,13 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@100..900&display=swap');
+
+:root {
+  font-family: 'Noto Sans KR', sans-serif;
+}
+
+.font-nanum {
+  font-family: inherit !important;
+}
 
 /* 인쇄 스타일 */
 @media print {

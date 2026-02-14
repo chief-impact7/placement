@@ -3,8 +3,11 @@
  * 중요: 조직 내 배포 시 GCP 콘솔에서 클라이언트 ID와 API 키 발급이 필요합니다.
  */
 
-const SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email';
-const DISCOVERY_DOC = 'https://sheets.googleapis.com/$discovery/rest?version=v4';
+const SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/userinfo.email';
+const DISCOVERY_DOCS = [
+    'https://sheets.googleapis.com/$discovery/rest?version=v4',
+    'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'
+];
 
 class SheetsService {
     constructor() {
@@ -12,30 +15,46 @@ class SheetsService {
         this.tokenClient = null;
         this.gapiInited = false;
         this.gisInited = false;
+        this.exportFolderId = '1pGeB3Cgsqm3y6_W5br_2WzC7NVSDrO6Y'; // 사용자 지정 폴더 ID
     }
 
     // GAPI 라이브러리 로드
     async initGapi(apiKey) {
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
+            if (!window.gapi) {
+                console.error('window.gapi 객체를 찾을 수 없습니다.');
+                return reject(new Error('GAPI script not loaded'));
+            }
             window.gapi.load('client', async () => {
-                await window.gapi.client.init({
-                    apiKey: apiKey,
-                    discoveryDocs: [DISCOVERY_DOC],
-                });
-                this.gapiInited = true;
-                resolve();
+                try {
+                    await window.gapi.client.init({
+                        apiKey: apiKey,
+                        discoveryDocs: DISCOVERY_DOCS,
+                    });
+                    this.gapiInited = true;
+                    console.log('GAPI client initialized successfully');
+                    resolve();
+                } catch (error) {
+                    console.error('GAPI client init failed:', error);
+                    reject(error);
+                }
             });
         });
     }
 
     // GIS 라이브러리 로드 (인증)
     initGis(clientId) {
+        if (!window.google || !window.google.accounts) {
+            console.error('window.google.accounts 객체를 찾을 수 없습니다.');
+            return;
+        }
         this.tokenClient = window.google.accounts.oauth2.initTokenClient({
             client_id: clientId,
             scope: SCOPES,
             callback: '',
         });
         this.gisInited = true;
+        console.log('GIS token client initialized successfully');
     }
 
     // 사용자 이메일 정보 가져오기
@@ -128,17 +147,23 @@ class SheetsService {
             }
 
             // 성적 필드 추가 (동적)
-            for (const [key, val] of Object.entries(data.scores)) {
+            const scores = data.scores || {};
+            console.log('[submitGradeData] 전송할 성적 데이터:', scores);
+            for (const [key, val] of Object.entries(scores)) {
                 const idx = this.findHeaderIndex(headerRow, key);
+                console.log(`[Field Matching] Key: "${key}", Value: "${val}", Found Index: ${idx}`);
                 if (idx !== -1) {
-                    if (val !== undefined) {
+                    if (val !== undefined && val !== null) {
                         updates.push({
                             range: `'${sheetName}'!${this.getColLetter(idx)}${targetRow}`,
                             values: [[val]]
                         });
                     }
+                } else {
+                    console.warn(`[Field Missing] 시트 헤더에 "${key}" 필드가 없습니다.`);
                 }
             }
+            console.log('[submitGradeData] 최종 생성된 업데이트 목록:', updates);
 
             await window.gapi.client.sheets.spreadsheets.values.batchUpdate({
                 spreadsheetId: spreadsheetId,
@@ -151,7 +176,8 @@ class SheetsService {
             return { status: "SUCCESS", message: `${targetRow}행에 데이터가 저장되었습니다.` };
         } catch (err) {
             console.error('Data submit error:', err);
-            return { status: "ERROR", message: err.message };
+            const errorMsg = err.result?.error?.message || err.message || JSON.stringify(err);
+            return { status: "ERROR", message: errorMsg };
         }
     }
 
@@ -519,7 +545,8 @@ class SheetsService {
             return { status: "SUCCESS", message: "시트 이름이 변경되었습니다." };
         } catch (err) {
             console.error('Rename sheet error:', err);
-            return { status: "ERROR", message: err.message };
+            const errorMessage = err.result?.error?.message || err.message || '알 수 없는 오류가 발생했습니다.';
+            return { status: "ERROR", message: errorMessage };
         }
     }
 
@@ -532,15 +559,77 @@ class SheetsService {
         return code;
     }
 
-    // 헤더 이름을 표준화하여 비교 (공백 제거, 소문자화)
+    // 헤더 이름을 표준화하여 비교 (공백, 특수문자 제거, 소문자화)
     normalize(str) {
-        return str ? str.toString().trim().toLowerCase().replace(/\s+/g, '') : '';
+        if (!str) return '';
+        // 공백, 괄호, 대시, 언더바 등을 모두 제거하고 소문자로 변환
+        return str.toString().toLowerCase().replace(/[\s\(\)\-_\/]/g, '');
     }
 
     findHeaderIndex(headerRow, targetName) {
-        const normalizedTarget = this.normalize(targetName);
-        // 정확히 일치하는 헤더 찾기 (엄격 매칭)
-        return headerRow.findIndex(h => this.normalize(h) === normalizedTarget);
+        if (!headerRow) return -1;
+        const normTarget = this.normalize(targetName);
+        return headerRow.findIndex(h => this.normalize(h) === normTarget);
+    }
+
+    // 선택한 학생들을 새 구글 시트로 내보내기
+    async exportToNewSpreadsheet(title, headers, rows) {
+        try {
+            // 1. 새 스프레드시트 생성
+            const spreadsheet = await window.gapi.client.sheets.spreadsheets.create({
+                resource: {
+                    properties: {
+                        title: title
+                    }
+                }
+            });
+            const newSpreadsheetId = spreadsheet.result.spreadsheetId;
+
+            // 2. 지정된 폴더로 파일 이동 (Drive API)
+            if (this.exportFolderId) {
+                try {
+                    // 기존 부모 폴더(루트) 제거 및 새 폴더 추가
+                    const file = await window.gapi.client.drive.files.get({
+                        fileId: newSpreadsheetId,
+                        fields: 'parents',
+                        supportsAllDrives: true
+                    });
+                    const previousParents = (file.result.parents || []).join(',');
+
+                    await window.gapi.client.drive.files.update({
+                        fileId: newSpreadsheetId,
+                        addParents: this.exportFolderId,
+                        removeParents: previousParents,
+                        fields: 'id, parents',
+                        supportsAllDrives: true
+                    });
+                    console.log(`[exportToNewSpreadsheet] 파일을 폴더(${this.exportFolderId})로 이동하였습니다.`);
+                } catch (driveErr) {
+                    console.error('Drive API move error:', driveErr);
+                    // 이동 실패 시에도 계속 진행하거나 에러를 던짐
+                    throw new Error(`파일은 생성되었으나 지정된 폴더로 이동하지 못했습니다: ${driveErr.result?.error?.message || driveErr.message}`);
+                }
+            }
+
+            // 3. 데이터 쓰기
+            await window.gapi.client.sheets.spreadsheets.values.update({
+                spreadsheetId: newSpreadsheetId,
+                range: 'Sheet1!A1',
+                valueInputOption: 'USER_ENTERED',
+                resource: {
+                    values: [headers, ...rows]
+                }
+            });
+
+            return {
+                status: "SUCCESS",
+                spreadsheetId: newSpreadsheetId,
+                url: `https://docs.google.com/spreadsheets/d/${newSpreadsheetId}/edit`
+            };
+        } catch (err) {
+            console.error('Export to new spreadsheet error:', err);
+            return { status: "ERROR", message: err.message };
+        }
     }
 }
 
