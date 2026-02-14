@@ -3,8 +3,11 @@
  * 중요: 조직 내 배포 시 GCP 콘솔에서 클라이언트 ID와 API 키 발급이 필요합니다.
  */
 
-const SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email';
-const DISCOVERY_DOC = 'https://sheets.googleapis.com/$discovery/rest?version=v4';
+const SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email';
+const DISCOVERY_DOCS = [
+    'https://sheets.googleapis.com/$discovery/rest?version=v4',
+    'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'
+];
 
 class SheetsService {
     constructor() {
@@ -12,6 +15,7 @@ class SheetsService {
         this.tokenClient = null;
         this.gapiInited = false;
         this.gisInited = false;
+        this.exportFolderId = '1pGeB3Cgsqm3y6_W5br_2WzC7NVSDrO6Y'; // 사용자 지정 폴더 ID
     }
 
     // GAPI 라이브러리 로드
@@ -25,7 +29,7 @@ class SheetsService {
                 try {
                     await window.gapi.client.init({
                         apiKey: apiKey,
-                        discoveryDocs: [DISCOVERY_DOC],
+                        discoveryDocs: DISCOVERY_DOCS,
                     });
                     this.gapiInited = true;
                     console.log('GAPI client initialized successfully');
@@ -581,7 +585,30 @@ class SheetsService {
             });
             const newSpreadsheetId = spreadsheet.result.spreadsheetId;
 
-            // 2. 데이터 쓰기
+            // 2. 지정된 폴더로 파일 이동 (Drive API)
+            if (this.exportFolderId) {
+                try {
+                    // 기존 부모 폴더(루트) 제거 및 새 폴더 추가
+                    const file = await window.gapi.client.drive.files.get({
+                        fileId: newSpreadsheetId,
+                        fields: 'parents'
+                    });
+                    const previousParents = file.result.parents.join(',');
+
+                    await window.gapi.client.drive.files.update({
+                        fileId: newSpreadsheetId,
+                        addParents: this.exportFolderId,
+                        removeParents: previousParents,
+                        fields: 'id, parents'
+                    });
+                    console.log(`[exportToNewSpreadsheet] 파일을 폴더(${this.exportFolderId})로 이동하였습니다.`);
+                } catch (driveErr) {
+                    console.error('Drive API move error:', driveErr);
+                    // 이동 실패 시에도 계속 진행 (루트에 남음)
+                }
+            }
+
+            // 3. 데이터 쓰기
             await window.gapi.client.sheets.spreadsheets.values.update({
                 spreadsheetId: newSpreadsheetId,
                 range: 'Sheet1!A1',
