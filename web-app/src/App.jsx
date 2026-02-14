@@ -645,7 +645,7 @@ const App = () => {
             if (statusFilter === 'completed') return isComp;
             if (statusFilter === 'incomplete') return !isComp;
             return true;
-        });
+        }).reverse();
     }, [studentList, listSearch, statusFilter]);
 
     const paginatedList = useMemo(() => {
