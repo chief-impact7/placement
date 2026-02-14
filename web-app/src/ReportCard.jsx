@@ -1,18 +1,20 @@
 import React, { useMemo } from 'react';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-    RadarChart, PolarGrid, PolarAngleAxis, Radar, Legend, Cell
+    RadarChart, PolarGrid, PolarAngleAxis, Radar, Legend, Text
 } from 'recharts';
 import {
-    Printer, User, BookOpen, Award, School, Star, TrendingUp, Bot, X, GraduationCap, FileText, Calendar
+    Printer, User, BookOpen, Award, School, Star, TrendingUp, X, GraduationCap, FileText, Calendar
 } from 'lucide-react';
 
-// 학부별 과목 구성 (App.jsx와 동기화 필요)
+// 학부별 과목 구성
 const SUBJECTS = {
     '초등부': ['L/C', 'Voca', 'Gr', 'R/C', 'Syn'],
     '중등부': ['L/C', 'Voca', 'Gr', 'R/C', 'Syn'],
     '고등부': ['청해', '대의파악', '문법어휘', '세부사항', '빈칸추론', '간접쓰기']
 };
+
+const LOGO_URL = "https://i.imgur.com/a4XeF5x.png";
 
 const ReportCard = ({ student, spreadsheetId, onClose }) => {
     const dept = student.dept_type || '중등부';
@@ -23,16 +25,16 @@ const ReportCard = ({ student, spreadsheetId, onClose }) => {
     const getTheme = () => {
         if (isHighSchool) {
             return {
-                primary: "bg-slate-700",
+                primary: "bg-[#1e293b]", // Slate-800
                 secondary: "bg-slate-50",
                 border: "border-slate-200",
-                text: "text-slate-800",
-                accent: "#334155", // slate-700
-                chartMy: "#475569", // slate-600
-                chartTop: "#94a3b8", // slate-400
-                chartAvg: "#cbd5e1", // slate-300
-                title: "학업 성취 분석표 (고등부 Academic)",
-                icon: <GraduationCap size={64} className="text-slate-300 opacity-50" />
+                text: "text-slate-900",
+                accent: "#0f172a",
+                chartMy: "#3b82f6", // Blue-500 (확실한 구분)
+                chartTop: "#10b981", // Emerald-500
+                chartAvg: "#94a3b8", // Slate-400
+                title: "학업 성취 분석표",
+                icon: <GraduationCap size={64} className="text-slate-400 opacity-20" />
             };
         }
         if (isElementary) {
@@ -58,7 +60,7 @@ const ReportCard = ({ student, spreadsheetId, onClose }) => {
             chartMy: "#4338ca",
             chartTop: "#10b981",
             chartAvg: "#cbd5e1",
-            title: "학업 성취 분석표 (Official)",
+            title: "학업 성취 분석표",
             icon: <Award size={64} className="text-indigo-300 opacity-30" />
         };
     };
@@ -66,42 +68,30 @@ const ReportCard = ({ student, spreadsheetId, onClose }) => {
     const theme = getTheme();
 
     // 데이터 가공
-    const { tableData, chartData, aiComment } = useMemo(() => {
-        if (!student || !student.scores) return { tableData: [], chartData: [], aiComment: '' };
+    const { tableData, chartData } = useMemo(() => {
+        if (!student || !student.scores) return { tableData: [], chartData: [] };
 
         const scores = student.scores;
         const subjects = SUBJECTS[dept] || SUBJECTS['중등부'];
-
-        // 고등부의 경우 'SUM' 필드 추가
         const targetFields = isHighSchool ? [...subjects, 'SUM'] : subjects;
-
-        // 1. 테이블용 데이터 (3행 구성: 내점수, 30%, 평균)
-        const studentRow = targetFields.map(f => parseFloat(scores[f] || 0));
-        const top30Row = targetFields.map(f => parseFloat(scores[`${f}(30%)`] || 0));
-        const avgRow = targetFields.map(f => parseFloat(scores[`${f}(av)`] || 0));
 
         const tableData = {
             headers: targetFields,
             rows: [
-                { label: '내 점수', values: studentRow, color: theme.chartMy },
-                { label: '상위 30%', values: top30Row, color: theme.chartTop },
-                { label: '평균 점수', values: avgRow, color: theme.chartAvg }
+                { label: student.name, values: targetFields.map(f => scores[f] || 0), color: theme.chartMy },
+                { label: '상위 30%', values: targetFields.map(f => scores[`${f}(30%)`] || 0), color: theme.chartTop },
+                { label: '평균', values: targetFields.map(f => scores[`${f}(av)`] || 0), color: theme.chartAvg }
             ]
         };
 
-        // 2. 차트용 데이터 (과목별 묶음)
-        // Radar/Bar 공용: { subject: '청해', score: 10, top30: 12, average: 8 }
         const chartData = subjects.map(f => ({
             subject: f,
-            score: parseFloat(scores[f] || 0),
-            top30: parseFloat(scores[`${f}(30%)`] || 0),
-            average: parseFloat(scores[`${f}(av)`] || 0),
-            fullMark: isHighSchool ? 20 : 100 // 정규화 (고등부는 과목별 만점이 낮음)
+            [student.name]: parseFloat(scores[f] || 0),
+            '상위 30%': parseFloat(scores[`${f}(30%)`] || 0),
+            '평균': parseFloat(scores[`${f}(av)`] || 0)
         }));
 
-        const aiComment = scores['AI_Analysis'] || scores['종합의견'] || "영역별 성취도를 바탕으로 분석 중입니다...";
-
-        return { tableData, chartData, aiComment };
+        return { tableData, chartData };
     }, [student, dept, theme]);
 
     const handlePrint = () => window.print();
@@ -110,7 +100,7 @@ const ReportCard = ({ student, spreadsheetId, onClose }) => {
 
     return (
         <div className="fixed inset-0 z-50 bg-slate-900/50 flex justify-center overflow-auto print:bg-white print:p-0">
-            <div className="relative w-full max-w-[210mm] min-h-screen bg-white shadow-2xl my-10 py-[15mm] px-[20mm] print:my-0 print:shadow-none"
+            <div className="relative w-full max-w-[210mm] min-h-screen bg-white shadow-2xl my-10 py-[15mm] px-[20mm] print:my-0 print:shadow-none flex flex-col"
                 style={{ width: '210mm', minHeight: '297mm' }}>
 
                 {/* 제어 버튼 */}
@@ -126,14 +116,8 @@ const ReportCard = ({ student, spreadsheetId, onClose }) => {
                 {/* Header */}
                 <div className={`border-b-4 ${theme.border} pb-6 mb-8 flex justify-between items-center`}>
                     <div>
-                        <h1 className={`text-4xl font-black ${theme.text} mb-3 tracking-tight`}>{theme.title}</h1>
-                        <div className="flex gap-4 text-slate-500 font-bold text-sm">
-                            <span className="flex items-center gap-1"><School size={16} /> {student.school}</span>
-                            <span className="text-slate-200">|</span>
-                            <span className="flex items-center gap-1"><Calendar size={16} /> {student.date} 시행</span>
-                            <span className="text-slate-200">|</span>
-                            <span className="flex items-center gap-1"><FileText size={16} /> {student.type}</span>
-                        </div>
+                        <h1 className={`text-4xl font-black ${theme.text} mb-3 tracking-tighter`}>{theme.title}</h1>
+                        <p className="text-slate-400 font-bold text-sm tracking-widest uppercase">Academic Performance Analysis</p>
                     </div>
                     <div className="relative">
                         {theme.icon}
@@ -143,49 +127,81 @@ const ReportCard = ({ student, spreadsheetId, onClose }) => {
                     </div>
                 </div>
 
-                {/* Student Profile Card */}
-                <div className={`grid grid-cols-5 gap-6 mb-10 p-6 rounded-3xl ${theme.secondary} border ${theme.border} shadow-sm`}>
-                    <div className="col-span-1 aspect-square bg-white rounded-2xl flex flex-col items-center justify-center border border-slate-200 shadow-inner">
-                        <User size={48} className="text-slate-300 mb-2" />
-                        <span className="text-sm font-black text-slate-800">{student.name}</span>
-                    </div>
-                    <div className="col-span-4 grid grid-cols-2 gap-x-12 items-center">
-                        <div className="space-y-4">
-                            <div className="flex justify-between border-b border-slate-200 pb-2">
-                                <span className="text-slate-400 font-bold text-xs uppercase tracking-widest">Student Name</span>
-                                <span className="text-lg font-black text-slate-900">{student.name}</span>
+                {/* 인적사항 (고등부 특화 레이아웃) */}
+                {isHighSchool ? (
+                    <div className={`p-8 rounded-3xl ${theme.secondary} border ${theme.border} mb-10 shadow-sm`}>
+                        <div className="grid grid-cols-2 gap-y-6">
+                            <div className="flex flex-col gap-1">
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Student Info</span>
+                                <div className="flex items-baseline gap-3">
+                                    <span className="text-2xl font-black text-slate-900">{student.name}</span>
+                                    <span className="text-lg font-bold text-slate-600">{student.school} {student.grade}</span>
+                                </div>
                             </div>
-                            <div className="flex justify-between border-b border-slate-200 pb-2">
-                                <span className="text-slate-400 font-bold text-xs uppercase tracking-widest">Student ID</span>
-                                <span className="text-lg font-black text-slate-900">{student.grade} - {student.id}</span>
+                            <div className="flex flex-col gap-1 items-end">
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Department</span>
+                                <span className="text-lg font-black text-slate-800">{student.dept_type} 과정</span>
+                            </div>
+                            <div className="col-span-2 pt-4 border-t border-slate-200 flex justify-between items-center">
+                                <div className="flex gap-8">
+                                    <div className="flex flex-col">
+                                        <span className="text-[9px] font-bold text-slate-400 uppercase">Test Date</span>
+                                        <span className="text-sm font-bold text-slate-700 flex items-center gap-1.5"><Calendar size={14} /> {student.date}</span>
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-[9px] font-bold text-slate-400 uppercase">Test Type</span>
+                                        <span className="text-sm font-bold text-slate-700 flex items-center gap-1.5"><FileText size={14} /> {student.type}</span>
+                                    </div>
+                                </div>
+                                <div className="text-[9px] font-mono text-slate-300">ID: {student.id}</div>
                             </div>
                         </div>
-                        <div className="space-y-4">
-                            <div className="flex justify-between border-b border-slate-200 pb-2">
-                                <span className="text-slate-400 font-bold text-xs uppercase tracking-widest">Department</span>
-                                <span className="text-lg font-black text-slate-900">{student.dept_type || '중등부'} 과정</span>
+                    </div>
+                ) : (
+                    /* 기존 초/중등부 인적사항 유지 */
+                    <div className={`grid grid-cols-5 gap-6 mb-10 p-6 rounded-3xl ${theme.secondary} border ${theme.border} shadow-sm`}>
+                        <div className="col-span-1 aspect-square bg-white rounded-2xl flex flex-col items-center justify-center border border-slate-200 shadow-inner">
+                            <User size={48} className="text-slate-300 mb-2" />
+                            <span className="text-sm font-black text-slate-800">{student.name}</span>
+                        </div>
+                        <div className="col-span-4 grid grid-cols-2 gap-x-12 items-center">
+                            <div className="space-y-4">
+                                <div className="flex justify-between border-b border-slate-200 pb-2">
+                                    <span className="text-slate-400 font-bold text-xs">이름</span>
+                                    <span className="text-lg font-black text-slate-900">{student.name}</span>
+                                </div>
+                                <div className="flex justify-between border-b border-slate-200 pb-2">
+                                    <span className="text-slate-400 font-bold text-xs">학교</span>
+                                    <span className="text-lg font-black text-slate-900">{student.school}</span>
+                                </div>
                             </div>
-                            <div className="flex justify-between border-b border-slate-200 pb-2">
-                                <span className="text-slate-400 font-bold text-xs uppercase tracking-widest">School</span>
-                                <span className="text-lg font-black text-slate-900">{student.school}</span>
+                            <div className="space-y-4">
+                                <div className="flex justify-between border-b border-slate-200 pb-2">
+                                    <span className="text-slate-400 font-bold text-xs">소속</span>
+                                    <span className="text-lg font-black text-slate-900">{student.dept_type} 과정</span>
+                                </div>
+                                <div className="flex justify-between border-b border-slate-200 pb-2">
+                                    <span className="text-slate-400 font-bold text-xs">응시일</span>
+                                    <span className="text-lg font-black text-slate-900">{student.date}</span>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                )}
 
-                {/* Score Summary Table (Middle) */}
+                {/* Score Table */}
                 <div className="mb-12">
-                    <div className={`flex items-center gap-2 mb-4 ${theme.text}`}>
-                        <BookOpen size={22} className="opacity-70" />
-                        <h2 className="text-xl font-black">영역별 성취도 분석 (Score Summary)</h2>
+                    <div className={`flex items-center gap-2 mb-4 font-black ${isHighSchool ? 'text-slate-800' : theme.text}`}>
+                        <BookOpen size={20} />
+                        <h2 className="text-xl">영역별 성취도 분석</h2>
                     </div>
                     <div className="overflow-hidden rounded-2xl border border-slate-200 shadow-sm">
                         <table className="w-full text-center border-collapse">
                             <thead>
                                 <tr className={`${theme.primary} text-white`}>
-                                    <th className="py-4 px-2 font-bold text-sm bg-black/20">구분</th>
+                                    <th className="py-4 px-2 font-bold text-sm bg-black/10">구분</th>
                                     {tableData.headers.map(h => (
-                                        <th key={h} className="py-4 px-2 font-bold text-sm border-l border-white/10 uppercase tracking-tighter">
+                                        <th key={h} className="py-4 px-2 font-bold text-sm border-l border-white/5 uppercase tracking-tighter">
                                             {h.replace('(Raw)', '').trim()}
                                         </th>
                                     ))}
@@ -194,9 +210,9 @@ const ReportCard = ({ student, spreadsheetId, onClose }) => {
                             <tbody>
                                 {tableData.rows.map((row, i) => (
                                     <tr key={i} className={`border-b border-slate-100 last:border-0 ${i === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>
-                                        <td className="py-4 px-2 font-black text-xs text-slate-500 bg-slate-50/80 border-r border-slate-100">{row.label}</td>
+                                        <td className="py-4 px-2 font-black text-xs text-slate-400 bg-slate-50/80 border-r border-slate-100">{row.label}</td>
                                         {row.values.map((v, j) => (
-                                            <td key={j} className={`py-4 px-2 font-black text-lg ${i === 0 ? theme.text : 'text-slate-400'}`}>
+                                            <td key={j} className={`py-4 px-2 font-black text-lg ${i === 0 ? 'text-blue-600' : 'text-slate-400'}`}>
                                                 {v}
                                             </td>
                                         ))}
@@ -207,79 +223,55 @@ const ReportCard = ({ student, spreadsheetId, onClose }) => {
                     </div>
                 </div>
 
-                {/* Visual Analysis (Bottom) */}
-                <div className="grid grid-cols-2 gap-10 h-72 mb-12">
-                    {/* Bar Chart Analysis */}
+                {/* Charts */}
+                <div className="grid grid-cols-2 gap-10 h-80 mb-12">
                     <div className="flex flex-col">
-                        <div className="flex items-center gap-2 mb-4 text-slate-500">
-                            <TrendingUp size={18} />
-                            <h3 className="text-sm font-black uppercase tracking-widest">Relative Performance (Bar)</h3>
+                        <div className="flex items-center gap-2 mb-4 text-slate-400 font-black text-[10px] uppercase tracking-widest">
+                            Relative Comparison
                         </div>
-                        <div className="flex-1 bg-white border border-slate-100 rounded-3xl p-4 shadow-sm">
+                        <div className="flex-1 bg-white border border-slate-100 rounded-[2.5rem] p-5 shadow-sm">
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={chartData} barGap={4}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                    <XAxis dataKey="subject" tick={{ fontSize: 10, fontWeight: 700, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                                    <XAxis dataKey="subject" tick={{ fontSize: 9, fontWeight: 900, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                                     <YAxis hide />
-                                    <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
-                                    <Bar dataKey="score" name="내 점수" fill={theme.chartMy} radius={[4, 4, 0, 0]} />
-                                    <Bar dataKey="top30" name="상위 30%" fill={theme.chartTop} radius={[4, 4, 0, 0]} opacity={0.6} />
-                                    <Bar dataKey="average" name="평균" fill={theme.chartAvg} radius={[4, 4, 0, 0]} opacity={0.4} />
+                                    <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '15px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
+                                    <Bar dataKey={student.name} fill={theme.chartMy} radius={[6, 6, 0, 0]} />
+                                    <Bar dataKey="상위 30%" fill={theme.chartTop} radius={[6, 6, 0, 0]} />
+                                    <Bar dataKey="평균" fill={theme.chartAvg} radius={[6, 6, 0, 0]} />
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
                     </div>
 
-                    {/* Radar Chart Analysis */}
                     <div className="flex flex-col">
-                        <div className="flex items-center gap-2 mb-4 text-slate-500">
-                            <Star size={18} />
-                            <h3 className="text-sm font-black uppercase tracking-widest">Academic Balance (Radar)</h3>
+                        <div className="flex items-center gap-2 mb-4 text-slate-400 font-black text-[10px] uppercase tracking-widest">
+                            Academic Balance
                         </div>
-                        <div className="flex-1 bg-white border border-slate-100 rounded-3xl p-2 shadow-sm">
+                        <div className="flex-1 bg-white border border-slate-100 rounded-[2.5rem] p-3 shadow-sm">
                             <ResponsiveContainer width="100%" height="100%">
                                 <RadarChart cx="50%" cy="50%" outerRadius="75%" data={chartData}>
                                     <PolarGrid stroke="#f1f5f9" />
-                                    <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10, fontWeight: 800, fill: '#475569' }} />
-                                    <Radar name="내 점수" dataKey="score" stroke={theme.chartMy} fill={theme.chartMy} fillOpacity={0.5} />
-                                    <Radar name="평균" dataKey="average" stroke={theme.chartAvg} fill={theme.chartAvg} fillOpacity={0.2} />
-                                    <Legend wrapperStyle={{ fontSize: '10px', fontWeight: 'bold' }} />
+                                    <PolarAngleAxis dataKey="subject" tick={{ fontSize: 9, fontWeight: 800, fill: '#64748b' }} />
+                                    <Radar name={student.name} dataKey={student.name} stroke={theme.chartMy} fill={theme.chartMy} fillOpacity={0.4} />
+                                    <Radar name="상위 30%" dataKey="상위 30%" stroke={theme.chartTop} fill={theme.chartTop} fillOpacity={0.1} />
+                                    <Radar name="평균" dataKey="평균" stroke={theme.chartAvg} fill={theme.chartAvg} fillOpacity={0.1} />
+                                    <Legend wrapperStyle={{ fontSize: '9px', fontWeight: 'bold', paddingTop: '10px' }} />
                                 </RadarChart>
                             </ResponsiveContainer>
                         </div>
                     </div>
                 </div>
 
-                {/* AI Comprehensive Analysis */}
-                <div className={`p-8 rounded-[2.5rem] ${isHighSchool ? 'bg-slate-50' : (isElementary ? 'bg-orange-50' : 'bg-indigo-50')} border ${theme.border} relative overflow-hidden`}>
-                    <Bot size={150} className={`${theme.text} opacity-5 absolute -right-4 -bottom-10`} />
-                    <div className="flex items-center gap-2 mb-4">
-                        <Bot size={24} className={theme.text} />
-                        <h2 className={`text-xl font-black ${theme.text}`}>AI 학습 종합 분석</h2>
-                    </div>
-                    <p className="text-slate-700 leading-relaxed font-medium text-sm whitespace-pre-wrap relative z-10">
-                        {aiComment}
-                    </p>
-                </div>
-
-                {/* Footer Certificate */}
-                <div className="mt-auto pt-10 border-t-2 border-slate-100 text-center flex flex-col items-center">
-                    <p className="text-lg font-bold text-slate-800 tracking-tight">위 학생의 학업 성취 결과를 정히 통보합니다.</p>
-                    <div className="mt-8 relative inline-block">
-                        <span className="text-2xl font-black tracking-[12px] text-slate-900 border-b-4 border-slate-900 pb-1">{student.school}장</span>
-                        {/* 관인 효과 */}
-                        <div className="absolute -right-16 -top-4 w-16 h-16 border-4 border-red-500/60 rounded-xl flex items-center justify-center rotate-12 mix-blend-multiply opacity-80">
-                            <div className="border border-red-500/60 w-14 h-14 rounded-lg flex items-center justify-center p-1">
-                                <span className="text-red-600 font-extrabold text-[10px] leading-none transform scale-90">OFFICIAL<br />CHIEF7</span>
-                            </div>
-                        </div>
-                    </div>
-                    <p className="text-[10px] text-slate-400 mt-12 font-mono">System ID: {spreadsheetId || 'IMPACT7_GLOBAL_AI_SYSTEM'}</p>
+                {/* Footer (Logo replaces Signature) */}
+                <div className="mt-auto pt-16 border-t border-slate-100 text-center flex flex-col items-center">
+                    <p className="text-xl font-bold text-slate-800 mb-8">위 학생의 학업 성취 결과를 정히 통보합니다.</p>
+                    <img src={LOGO_URL} alt="Academy Logo" className="h-16 object-contain grayscale opacity-80" />
+                    <p className="text-[9px] text-slate-300 mt-6 font-mono tracking-tighter">Powered by Chief Impact7 AI Reporting System | {spreadsheetId}</p>
                 </div>
 
             </div>
 
-            {/* Print Settings */}
             <style dangerouslySetInnerHTML={{
                 __html: `
                 @media print {
