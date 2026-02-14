@@ -567,6 +567,40 @@ class SheetsService {
         const normTarget = this.normalize(targetName);
         return headerRow.findIndex(h => this.normalize(h) === normTarget);
     }
+
+    // 선택한 학생들을 새 구글 시트로 내보내기
+    async exportToNewSpreadsheet(title, headers, rows) {
+        try {
+            // 1. 새 스프레드시트 생성
+            const spreadsheet = await window.gapi.client.sheets.spreadsheets.create({
+                resource: {
+                    properties: {
+                        title: title
+                    }
+                }
+            });
+            const newSpreadsheetId = spreadsheet.result.spreadsheetId;
+
+            // 2. 데이터 쓰기
+            await window.gapi.client.sheets.spreadsheets.values.update({
+                spreadsheetId: newSpreadsheetId,
+                range: 'Sheet1!A1',
+                valueInputOption: 'USER_ENTERED',
+                resource: {
+                    values: [headers, ...rows]
+                }
+            });
+
+            return {
+                status: "SUCCESS",
+                spreadsheetId: newSpreadsheetId,
+                url: `https://docs.google.com/spreadsheets/d/${newSpreadsheetId}/edit`
+            };
+        } catch (err) {
+            console.error('Export to new spreadsheet error:', err);
+            return { status: "ERROR", message: err.message };
+        }
+    }
 }
 
 export const sheetsService = new SheetsService();
