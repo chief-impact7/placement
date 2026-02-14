@@ -4,7 +4,7 @@ import {
     RadarChart, PolarGrid, PolarAngleAxis, Radar, Legend, Cell
 } from 'recharts';
 import {
-    Printer, User, BookOpen, Award, School, Star, TrendingUp, Bot, X, GraduationCap, FileText
+    Printer, User, BookOpen, Award, School, Star, TrendingUp, Bot, X, GraduationCap, FileText, Calendar
 } from 'lucide-react';
 
 // 학부별 과목 구성 (App.jsx와 동기화 필요)
@@ -14,7 +14,7 @@ const SUBJECTS = {
     '고등부': ['청해', '대의파악', '문법어휘', '세부사항', '빈칸추론', '간접쓰기']
 };
 
-const ReportCard = ({ student, onClose }) => {
+const ReportCard = ({ student, spreadsheetId, onClose }) => {
     const dept = student.dept_type || '중등부';
     const isHighSchool = dept === '고등부';
     const isElementary = dept === '초등부';
