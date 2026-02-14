@@ -3,7 +3,7 @@
  * 중요: 조직 내 배포 시 GCP 콘솔에서 클라이언트 ID와 API 키 발급이 필요합니다.
  */
 
-const SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email';
+const SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/userinfo.email';
 const DISCOVERY_DOCS = [
     'https://sheets.googleapis.com/$discovery/rest?version=v4',
     'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'
@@ -591,20 +591,23 @@ class SheetsService {
                     // 기존 부모 폴더(루트) 제거 및 새 폴더 추가
                     const file = await window.gapi.client.drive.files.get({
                         fileId: newSpreadsheetId,
-                        fields: 'parents'
+                        fields: 'parents',
+                        supportsAllDrives: true
                     });
-                    const previousParents = file.result.parents.join(',');
+                    const previousParents = (file.result.parents || []).join(',');
 
                     await window.gapi.client.drive.files.update({
                         fileId: newSpreadsheetId,
                         addParents: this.exportFolderId,
                         removeParents: previousParents,
-                        fields: 'id, parents'
+                        fields: 'id, parents',
+                        supportsAllDrives: true
                     });
                     console.log(`[exportToNewSpreadsheet] 파일을 폴더(${this.exportFolderId})로 이동하였습니다.`);
                 } catch (driveErr) {
                     console.error('Drive API move error:', driveErr);
-                    // 이동 실패 시에도 계속 진행 (루트에 남음)
+                    // 이동 실패 시에도 계속 진행하거나 에러를 던짐
+                    throw new Error(`파일은 생성되었으나 지정된 폴더로 이동하지 못했습니다: ${driveErr.result?.error?.message || driveErr.message}`);
                 }
             }
 
