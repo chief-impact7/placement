@@ -1237,7 +1237,7 @@ const App = () => {
                         {/* Right: Trend Chart (1/4 width) */}
                         <div className="xl:col-span-1 space-y-6">
                             {selectedStudents.size > 0 ? (
-                                Array.from(selectedStudents).map(studentId => {
+                                Array.from(selectedStudents).slice(0, 4).map(studentId => {
                                     const student = studentList.find(s => s.id === studentId);
                                     if (!student) return null;
 
@@ -1260,7 +1260,7 @@ const App = () => {
                                     }).join(' ');
 
                                     return (
-                                        <div key={studentId} className="bg-white rounded-[2.5rem] border border-slate-200 p-6 shadow-sm animate-in fade-in slide-in-from-right-4 duration-500 sticky top-6">
+                                        <div key={studentId} className="bg-white rounded-[2.5rem] border border-slate-200 p-6 shadow-sm animate-in fade-in slide-in-from-right-4 duration-500">
                                             <div className="flex flex-col gap-2 mb-6">
                                                 <div className="flex items-center justify-between">
                                                     <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
