@@ -727,7 +727,7 @@ const App = () => {
 
     return (
         <div className="h-screen overflow-hidden bg-[#f1f5f9] font-sans">
-            <main className="h-full overflow-y-auto p-12 bg-[#f8fafc]">
+            <main className="h-full overflow-y-auto p-12 bg-[#f8fafc] print:hidden">
                 <div className="max-w-7xl mx-auto space-y-10 pb-20">
                     {/* Header with Search and Stats */}
                     <div className="flex justify-between items-center mb-10">
